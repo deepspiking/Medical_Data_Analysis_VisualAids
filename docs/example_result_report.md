@@ -20,21 +20,38 @@
 * **상관관계 및 다중공선성 히트맵 (`02_categorical_correlation.py`)**
   * **결과 요약**: 종양 미세환경 점수(`ESTIMATE_StromalScore`, `ImmuneScore`)와 변동성이 가장 높은 Top 8 단백질 간의 Spearman 상관관계를 도출했습니다.
   * **해석**: 히트맵을 통해 `OS_event`(사망 레이블)와 개별 단백질들 사이의 상관성을 단번에 파악했습니다. 특정 단백질들 사이에 강한 양의 상관관계(r > 0.5)가 관찰되었으며, 이는 이들이 동일한 생물학적 패스웨이(Co-expression)를 공유함을 시사합니다. 머신러닝 예측 모델에 진입하기 전 다중공선성을 제거할 판단 근거를 마련했습니다.
+  
+  *(예시: 전체 변수 간의 기초 상관관계 히트맵)*
+  ![Correlation Heatmap](../outputs/categorical_correlation/correlation_heatmap.png)
 
 * **차원 축소 및 이질성 시각화 (`09_dimensionality_reduction.py`)**
   * **결과 요약**: RNA-seq 데이터를 2차원 공간으로 매핑한 PCA 및 t-SNE 산점도를 생성했습니다. 면역 점수(Immune Subtype)를 기준으로 고면역군(High)과 저면역군(Low)으로 색칠했습니다.
   * **해석**: t-SNE 도표에서 점들이 완전히 뒤섞여 있다면 면역군에 따른 유전자 발현의 전체적인 차이가 없다는 뜻이나, 특정 영역에 고면역군이 응집(Clustering)되는 양상이 보인다면 "면역 침윤 정도가 종양의 전반적인 유전자 발현 패턴을 뒤바꿀 만큼 거대한 이질성(Heterogeneity)을 야기한다"는 것을 강력하게 입증합니다.
 
-### Phase 2: 바이오마커 선별 및 진단 모델링 (Biomarker Selection & Prediction)
+  *(예시: PCA 및 t-SNE 산점도)*
+  ![PCA and t-SNE](../outputs/advanced_plots/pca_tsne_plot.png)
+
+### Phase 2: 바이오마커 선별 및 기전 분석 (Biomarker Selection & Mechanism)
 수많은 노이즈 속에서 환자 생존과 연관된 핵심 변수를 뽑고, 진단 로직을 세웁니다.
 
 * **LASSO 기반 최적 마커 추출 (`11_feature_selection_lasso.py`)**
-  * **결과 요약**: L1 페널티를 적용해 수백 개의 마커를 필터링하는 `Coefficient Path Plot`을 그렸습니다.
-  * **해석**: 페널티 축(Alpha)이 강해질수록 대다수 유전자의 가중치가 0으로 수렴하며 탈락합니다. 마지막까지 살아남는 굵은 선들의 주인공 유전자들이 바로 "예후를 가장 날카롭게 예측하는 다중 유전자 패널(Multi-gene signature)" 후보가 됩니다.
+  * **결과 요약**: L1 페널티를 적용해 수백 개의 마커를 필터링하는 `Coefficient Path Plot`을 그렸습니다. 또한, **사용자님의 통찰력 있는 아이디어를 파이프라인 아키텍처에 즉각 반영하여**, 최종 선택된 소수 정예의 마커들끼리 서로 어떤 상관관계(Co-expression)를 가지는지, 그리고 생존 일수(`OS_days`)와 어떻게 직결되는지 보여주는 **전용 상관관계 히트맵(Correlation Heatmap of LASSO-Selected Features)**을 추가 생성하도록 11번 파이프라인을 자동 연계 업데이트했습니다.
+  * **해석**: 
+    1. **Path Plot**: 페널티 축(Alpha)이 강해질수록 대다수 유전자의 가중치가 0으로 수렴하며 탈락합니다. 마지막까지 살아남는 굵은 선들의 주인공들이 예후 예측의 핵심 다중 유전자 패널이 됩니다. 
+    2. **Selected Features Heatmap**: 뽑혀 나온 상위 10개의 최정예 마커들끼리도 붉게(양의 상관) 혹은 푸르게(음의 상관) 묶이는 그룹이 존재함을 확인할 수 있습니다. 특히 맨 윗줄의 `OS_days`(생존 기간)와 강한 붉은색/푸른색을 띠는 마커들은 모델을 떠나 실제 임상적으로도 생존 연장/단축에 결정적인 역할을 하는 유전자임을 교차 검증합니다.
+    
+  *(예시 1: LASSO Coefficient Path Plot)*
+  ![LASSO Path Plot](../outputs/predictive_modeling/lasso_path_plot.png)
+  
+  *(예시 2: LASSO로 선별된 최정예 마커 간의 상관관계 히트맵)*
+  ![LASSO Selected Corr](../outputs/predictive_modeling/lasso_selected_features_corr.png)
 
 * **임상 진단용 의사결정나무 (`04_predictive_modeling.py`)**
   * **결과 요약**: 생존(Alive) vs 사망(Deceased)을 예측하는 Decision Tree 모델을 훈련하여 95%의 정확도를 달성했습니다.
   * **해석**: 복잡한 인공지능이 아닌 트리 다이어그램을 출력(`decision_tree_viz.svg`)하여, 의사가 직관적으로 "A 마커가 0.4 이하이면서 B 마커가 0.1 이상이면 고위험군이다"라는 명시적인 컷오프(Cut-off) 진단 기준을 확립할 수 있도록 돕습니다.
+  
+  *(예시: 예측 의사결정나무 다이어그램)*
+  ![Decision Tree](../outputs/predictive_modeling/decision_tree_viz.svg)
 
 ### Phase 3: 생존 및 예후 평가 (Survival & Prognosis)
 선별된 변수와 예측 모델이 환자의 '시간에 따른 생존율'에 어떻게 작용하는지 측정합니다.
@@ -43,13 +60,23 @@
   * **결과 요약**: 총 96명의 유효 추적 환자 데이터(사망 이벤트 2건)를 바탕으로 분석했습니다. 면역 점수(`ESTIMATE_ImmuneScore`) 상/하위 그룹 간의 로그랭크 테스트(Log-rank test) P-value는 0.98로 나타났으며, TMB(종양변이부담)의 Cox HR 가중치를 산출했습니다.
   * **해석**: 현재 샘플 데이터셋에서는 사망 건수(Event)가 2건으로 매우 적어 두 그룹 간 생존 곡선 간격의 통계적 유의성(p<0.05)이 확보되지 않았습니다. 그러나 파이프라인 상에 구축된 Cox 모델은 C-index=0.78이라는 훌륭한 적합도를 보여주었으며, 향후 대규모 코호트 데이터가 주입될 경우 즉시 강력한 예후 인자를 식별해낼 수 있음을 확인했습니다.
 
+  *(예시: 카플란-마이어 생존 곡선)*
+  ![Kaplan-Meier Plot](../outputs/survival_plots/km_survival_all.png)
+
 ### Phase 4: 임상적 신뢰성 및 유용성 입증 (Clinical Utility & Quality Assurance)
 마지막으로, 연구의 신뢰도를 논문 심사관(Reviewer)에게 증명하는 고급 검증 도구들을 출력합니다.
 
 * **선택 편향 통제 (`06_causal_inference.py` - Love Plot)**
   * 성향점수매칭(PSM) 적용 후, `Unadjusted` 시절 0.1 점선을 크게 벗어나 들쭉날쭉하던 변수들이 `Adjusted` 상태에서 모두 0.1 점선 안쪽(0.0)으로 수렴하는 것을 Love Plot을 통해 증명했습니다. 관찰 연구의 고질적인 '집단 간 기저 특성 불균형'이 완벽하게 해결되었음을 입증합니다.
+  
+  *(예시: 성향점수매칭 검증 러브 플롯)*
+  ![Love Plot](../outputs/causal_inference/love_plot.png)
+
 * **임상 결정 곡선 (`07_advanced_visualization.py` - DCA Plot)**
   * 단순히 정확도(Accuracy)가 높다는 것을 넘어, "이 진단 모델을 믿고 치료 방침을 결정했을 때, 무작정 전부 다 치료하거나 아무도 치료하지 않는 것보다 실제로 환자에게 훨씬 더 높은 순이익(Net Benefit)을 가져다준다"는 것을 곡선의 높낮이로 입증해냈습니다.
+  
+  *(예시: 임상 결정 곡선 DCA Plot)*
+  ![DCA Plot](../outputs/advanced_plots/dca_plot.png)
 
 ---
 

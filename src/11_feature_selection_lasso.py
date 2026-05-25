@@ -72,7 +72,43 @@ def main():
     
     output_file = 'outputs/predictive_modeling/lasso_path_plot.png'
     plt.savefig(output_file, bbox_inches='tight')
+    plt.close()
     print(f"Plot saved to {output_file}")
+    
+    print("Extracting LASSO-selected features...")
+    selected_indices = np.where(lasso_cv.coef_ != 0)[0]
+    selected_genes = top_500_genes[selected_indices]
+    
+    if len(selected_genes) < 2:
+        print("LASSO dropped all features at optimal alpha. Selecting top 10 features from a looser alpha for demonstration...")
+        idx = len(lasso_cv.alphas_) // 2
+        path_coefs = coefs_path[:, idx]
+        top_indices = np.argsort(np.abs(path_coefs))[-10:]
+        selected_genes = top_500_genes[top_indices]
+        
+    print(f"Number of features selected for correlation: {len(selected_genes)}")
+    
+    if len(selected_genes) > 1:
+        print("Generating correlation heatmap for selected features...")
+        import seaborn as sns
+        from scipy import stats
+        
+        selected_data = df_merged[list(selected_genes) + ['OS_days']]
+        corr_matrix = selected_data.corr(method='spearman')
+        
+        plt.figure(figsize=(10, 8))
+        sns.heatmap(corr_matrix, annot=True, fmt=".2f", cmap='coolwarm', center=0, 
+                    square=True, linewidths=.5, cbar_kws={"shrink": .8})
+        plt.title('Correlation Heatmap of LASSO-Selected Features & OS_days', fontsize=14, pad=20)
+        plt.xticks(rotation=45, ha='right')
+        plt.yticks(rotation=0)
+        
+        corr_output_file = 'outputs/predictive_modeling/lasso_selected_features_corr.png'
+        plt.savefig(corr_output_file, bbox_inches='tight', dpi=300)
+        plt.close()
+        print(f"Correlation heatmap of selected features saved to {corr_output_file}")
+    else:
+        print("Not enough features selected to generate a correlation heatmap.")
 
 if __name__ == "__main__":
     main()

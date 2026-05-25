@@ -11,13 +11,18 @@ def main():
     print("Loading phenotype data...")
     pheno_df = pd.read_csv('BRCA/BRCA_phenotype.txt', sep='\t', index_col='idx')
     
+    print("Loading survival data (Labels)...")
+    surv_df = pd.read_csv('BRCA/BRCA_survival.txt', sep='\t', index_col='case_id')
+    
     print("Loading proteomics data...")
     prot_df = pd.read_csv('BRCA/BRCA_proteomics_gene_abundance_log2_reference_intensity_normalized_Tumor.txt', sep='\t', index_col='idx')
     prot_df = prot_df.T
     
     pheno_df.index = pheno_df.index.astype(str)
     prot_df.index = prot_df.index.astype(str)
-    merged_df = pheno_df.join(prot_df, how='inner')
+    surv_df.index = surv_df.index.astype(str)
+    
+    merged_df = pheno_df.join(prot_df, how='inner').join(surv_df, how='inner')
     
     out_dir = 'outputs/categorical_correlation'
     os.makedirs(out_dir, exist_ok=True)
@@ -61,10 +66,10 @@ def main():
     # 2. Correlation Matrix Heatmap
     # ---------------------------------------------------------
     print("\n--- Correlation Analysis ---")
-    # Select 8 highly variable genes and 2 phenotype scores
     top_genes = prot_df.var().sort_values(ascending=False).head(8).index.tolist()
     pheno_feats = ['ESTIMATE_StromalScore', 'ESTIMATE_ImmuneScore']
-    corr_cols = pheno_feats + top_genes
+    label_feat = ['OS_event']
+    corr_cols = label_feat + pheno_feats + top_genes
     
     corr_data = merged_df[corr_cols].apply(pd.to_numeric, errors='coerce')
     

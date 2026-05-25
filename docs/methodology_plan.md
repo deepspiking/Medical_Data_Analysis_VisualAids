@@ -1,88 +1,40 @@
-# 의료 데이터 분석 및 시각화 구현 계획서
+# 의료 오믹스 데이터 분석 및 시각화 아키텍처 (Single-Stream Pipeline)
 
 ## 개요
-이 문서는 제시된 임상 및 중개연구 데이터 분석의 필수 통계 방법론과 핵심 시각화 도구를 Python으로 구현하기 위한 계획서입니다. 분석은 프로젝트 내의 `BRCA` (Breast Invasive Carcinoma) 폴더에 있는 샘플 데이터를 활용합니다.
+이 문서는 임상 및 중개연구 데이터(예: TCGA-BRCA)를 분석하여 바이오마커를 발굴하고 검증하는 **단일 스트림(Single Stream) 통합 파이프라인**의 설계도입니다. 기존에 파편화되어 있던 11개의 통계/머신러닝 기법들을 유기적으로 결합하여, 하나의 스크립트 실행으로 논문 한 편의 서사가 완성되도록 구축되었습니다.
 
-## 구현 파일 및 포함 내용 (`src/` 폴더 내 작성)
+## 핵심 구동 스크립트
+* **`src/comprehensive_biomarker_pipeline.py`**: 모든 분석 및 시각화를 관장하는 메인 엔진입니다. (또는 `src/main_pipeline.py`로 오케스트레이션 수행)
+* **결과물 저장소**: 모든 시각화 결과는 `outputs/comprehensive_analysis/` 폴더에 순차적인 번호표(1_, 2_, 3_...)를 달고 생성됩니다.
 
-### 1. `01_comparative_analysis.py` (그룹 간 비교 분석)
-* **목표**: 정규/비정규 분포를 따르는 두 개 또는 세 개 이상의 집단 간 차이 비교 및 유의성 시각화
-* **구현 방법론**:
-  * Student's t-test, ANOVA, Mann-Whitney U test, Kruskal-Wallis test
-  * **Box Plot (P-value annotation 포함)**: 집단 간 발현량 분포와 통계적 유의성을 한눈에 보여주는 시각화
-* **사용 데이터**: `BRCA_phenotype.txt` (임상 그룹 변수), `BRCA_RNAseq_gene_RSEM_coding_UQ_1500_log2_Tumor.txt` (유전자 발현량 등 연속형 변수)
+---
 
-### 2. `02_categorical_correlation.py` (범주형 데이터 및 상관관계 분석)
-* **목표**: 임상 인자 간의 연관성 및 연속형 변수 간의 상관관계 검증 및 시각화
-* **구현 방법론**:
-  * Chi-Square test, Fisher's Exact test
-  * Pearson 상관분석, Spearman 상관분석
-  * **Scatter Plot (Regression line & p-value 포함)**: 두 변수 간의 선형 회귀 추세 및 상관계수 표시
-* **사용 데이터**: `BRCA_phenotype.txt` (병기, 성별 등 범주형 변수), `BRCA_proteomics...txt` (단백질 발현 등 연속형 변수)
+## 파이프라인 워크플로우 (3단계 검증 아키텍처)
 
-### 3. `03_survival_analysis.py` (생존 및 예후 분석 + Kaplan-Meier Plot)
-* **목표**: 환자의 누적 생존율 추적 및 예후 인자 식별
-* **구현 방법론**:
-  * Kaplan-Meier 생존 곡선 (Kaplan-Meier Plot)
-  * Log-rank test
-  * Cox Proportional Hazards Model (Cox 회귀분석)
-* **사용 데이터**: `BRCA_survival.txt` (생존 시간 및 상태), `BRCA_phenotype.txt` (비교를 위한 환자 변수)
+### Phase 1: 1차 유효 변수 선택 (Feature Selection)
+수만 개의 노이즈 데이터 속에서 타겟(예: 고면역군/저면역군)과 연관된 1차 후보군을 압축합니다.
+* **적용 기법**: Pearson Correlation Filter $\rightarrow$ LASSO (L1-Regularization)
+* **출력물**: 
+  * `1_lasso_coefficients.png`: 페널티를 견디고 살아남은 후보 유전자들의 가중치 시각화
+  * `1_correlation_heatmap.png`: 선별된 후보군 간의 다중공선성 및 동반 발현(Co-expression) 네트워크 히트맵
 
-### 4. `04_predictive_modeling.py` (진단 및 예측 모델링 + Decision Tree Diagram)
-* **목표**: 특정 임상 결과 발생 확률 예측 및 분류
-* **구현 방법론**:
-  * Logistic Regression (로지스틱 회귀)
-  * Decision Tree (의사결정나무 모델 및 시각화 Diagram)
-  * 다중 모달 융합 딥러닝 템플릿 코드 (구조적 예시 제공)
-* **사용 데이터**: `BRCA_phenotype.txt`, 유전자/단백질 발현 데이터 융합
+### Phase 2: 진단 모델 구축 및 최종 마커 확정 (Diagnostic Modeling)
+1차 후보군을 입력받아 두 가지 머신러닝 모델을 훈련하며, 모델의 가지치기 특성을 활용해 최종 바이오마커를 확정합니다.
+* **적용 기법**: Decision Tree, Logistic Regression
+* **출력물**:
+  * `2_decision_tree.svg`: 모델이 실제 분기(Split)에 사용한 핵심 유전자(최종 바이오마커)의 컷오프(Cut-off) 구조도
+  * `2_lr_coefficients_table.png`: 최종 확정된 유전자들의 오즈비(Odds Ratio) 및 회귀 계수 테이블
 
-### 5. `05_concordance_analysis.py` (검사법 간 일치도 + Bland-Altman Plot)
-* **목표**: 두 진단/판독 간의 일치도 측정 및 바이어스 확인
-* **구현 방법론**:
-  * Cohen's Kappa 계수
-  * Bland-Altman Plot
-* **사용 데이터**: (유사한 두 가지 연속 측정치 또는 범주형 측정치 생성하여 비교)
-
-### 6. `06_causal_inference.py` (혼란 인자 통제 + Love Plot)
-* **목표**: 관찰 연구의 선택 편향 보정
-* **구현 방법론**:
-  * Propensity Score Matching (PSM) 및 Love Plot 시각화
-  * Inverse Probability of Treatment Weighting (IPTW)
-* **사용 데이터**: `BRCA_phenotype.txt` (치료군 vs 대조군 모사)
-
-### 7. `07_advanced_visualization.py` (고급 임상 시각화 도구)
-* **목표**: 논문 품질의 필수 시각화 도구 구현
-* **구현 방법론**:
-  * 예측 노모그램 (Nomogram 템플릿)
-  * 보정 곡선 (Calibration Curve)
-  * 임상 결정 곡선 (Decision Curve Analysis, DCA Plot)
-  * 볼케이노 플롯 (Volcano Plot - DEG 분석 시각화)
-  * 구획별 버블 플롯 (Bubble Plot)
-  * 설명 가능한 AI (Grad-CAM 템플릿 - 가상의 이미지/텐서 활용)
-* **사용 데이터**: `BRCA_RNAseq...`, `BRCA_survival.txt`, 모형 예측 결과 등
-
-### 9. `09_dimensionality_reduction.py` (차원 축소 및 데이터 군집 시각화)
-* **목표**: 고차원 멀티오믹스 데이터의 시각적 패턴 및 환자 그룹 간 분리도 확인
-* **구현 방법론**:
-  * Principal Component Analysis (PCA)
-  * t-Distributed Stochastic Neighbor Embedding (t-SNE)
-* **사용 데이터**: `BRCA_RNAseq...` 또는 Proteomics 데이터, `BRCA_phenotype.txt`
-
-### 10. `10_pathway_enrichment.py` (유전자 셋 강화 및 패스웨이 분석)
-* **목표**: 차발현 유전자(DEG)들이 특정 생물학적 기전(예: mTOR, MAPK pathway)에 집중되어 있는지 검증
-* **구현 방법론**:
-  * Gene Set Enrichment Analysis (GSEA) 또는 KEGG/GO Pathway Enrichment (Bar plot / Enrichment plot)
-* **사용 데이터**: `BRCA_RNAseq...` 기반 DEG 도출 및 가상의 패스웨이 데이터베이스 연동
-
-### 11. `11_feature_selection_lasso.py` (LASSO 기반 바이오마커 피처 셀렉션)
-* **목표**: 수만 개의 유전자/단백질 중 임상적 예후 예측에 가장 핵심적인 다중 바이오마커 패널 추출
-* **구현 방법론**:
-  * LASSO Regression (L1-regularization) 및 Cross-Validation (CV)
-  * Coefficient Path Plot 시각화
-* **사용 데이터**: `BRCA_RNAseq...`, `BRCA_survival.txt` 또는 `BRCA_phenotype.txt` (Target 변수)
+### Phase 3: 최종 바이오마커 다각도 검증 (Validation Suite)
+최종 선별된 유전자들과 구축된 모델이 임상적으로 완벽한지 8가지 엄격한 통계 기법으로 교차 검증합니다.
+1. **계층적 군집화 (`3b_clustering.png`)**: 유전자 발현 패턴에 따른 종양 이질성(Tumor Heterogeneity) 분리 확인.
+2. **차원 축소 (`3f_pca_tsne.png`)**: PCA 및 t-SNE를 통해 다차원 공간에서 타겟 그룹 간의 군집 분리도 시각화.
+3. **모델 스코어 검증 (`3c_model_scores_ttest.png`)**: 모델(LR, DT)이 예측한 확률 점수가 실제 타겟 그룹 간에 유의미한 차이(t-test)를 보이는지 박스플롯 증명.
+4. **개별 마커 검증 (`3d_biomarkers_ttest.png`)**: 각 유전자 발현량의 그룹 간 t-test.
+5. **생존 분석 (`3e_survival_km.png`)**: 예측 모델 기반 분류가 실제 환자의 생존 기간(OS_days)을 가르는지 Kaplan-Meier 및 Log-rank test 적용.
+6. **임상 결정 곡선 및 보정 (`3g_dca_calibration.png`)**: DCA 곡선을 통한 임상적 순이익(Net Benefit) 입증 및 Calibration 정확도 평가.
+7. **위상 확인 (`3h_volcano_plot.png`)**: 전체 유전자 볼케이노 플롯에서 선별된 최종 마커의 위치(최우수 유의성)를 하이라이팅.
 
 ## 개발 및 실행 환경
 * Python 3.8+
-* 필요 라이브러리: `pandas`, `numpy`, `scipy`, `statsmodels`, `scikit-learn`, `lifelines` (생존 분석 용), `matplotlib`, `seaborn`, `psmatch` 등.
-* 데이터 로드 시 각 데이터셋의 공통 환자 ID를 기준으로 병합(Merge)하여 사용합니다.
-* **결과물 저장**: 모든 스크립트 실행을 통해 생성된 시각화 결과물(Plot 등)은 `outputs/` 폴더 내에 각 분석 카테고리별 하위 폴더(예: `survival_plots/`, `concordance_plots/`, `predictive_modeling/`, `causal_inference/`, `advanced_plots/`)로 구분되어 저장됩니다.
+* 필수 라이브러리: `pandas`, `numpy`, `scipy`, `scikit-learn`, `lifelines`, `matplotlib`, `seaborn`, `requests`

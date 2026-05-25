@@ -66,18 +66,20 @@ def main():
     pheno_feats = ['ESTIMATE_StromalScore', 'ESTIMATE_ImmuneScore']
     corr_cols = pheno_feats + top_genes
     
-    corr_data = merged_df[corr_cols].apply(pd.to_numeric, errors='coerce').dropna()
+    corr_data = merged_df[corr_cols].apply(pd.to_numeric, errors='coerce')
     
-    # Calculate correlation matrix (Spearman for robustness)
     corr_matrix = corr_data.corr(method='spearman')
     
-    # Calculate p-values to add asterisks
     pval_matrix = pd.DataFrame(np.ones_like(corr_matrix.values), columns=corr_cols, index=corr_cols)
     for i in corr_cols:
         for j in corr_cols:
             if i != j:
-                _, p_val = stats.spearmanr(corr_data[i], corr_data[j])
-                pval_matrix.loc[i, j] = p_val
+                mask = corr_data[i].notna() & corr_data[j].notna()
+                if mask.sum() > 2:
+                    _, p_val = stats.spearmanr(corr_data.loc[mask, i], corr_data.loc[mask, j])
+                    pval_matrix.loc[i, j] = p_val
+                else:
+                    pval_matrix.loc[i, j] = 1.0
                 
     # Format annotations: r value + * if significant
     annot_matrix = pd.DataFrame('', index=corr_matrix.index, columns=corr_matrix.columns)

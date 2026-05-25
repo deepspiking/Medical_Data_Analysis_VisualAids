@@ -19,20 +19,26 @@
 pip install -r requirements.txt
 ```
 
-### 2. 스크립트 실행
-`src/` 디렉터리에 번호가 매겨진 11개의 파이썬 분석 스크립트가 있습니다. 터미널에서 실행하고자 하는 스크립트를 구동하세요.
+### 2. 마스터 파이프라인 실행 (Recommended)
+개별 스크립트를 하나씩 실행할 필요 없이, `main_pipeline.py`를 실행하면 1번부터 11번까지의 전체 분석 파이프라인(데이터 로드 -> 통계 분석 -> 피처 셀렉션 -> 머신러닝 예측 -> 최종 논문용 시각화)이 자동 오케스트레이션되어 순차적으로 구동됩니다.
+```bash
+python src/main_pipeline.py
+```
+
+### 3. 개별 스크립트 실행
+특정 분석만 필요할 경우 개별 실행도 가능합니다.
 ```bash
 # 예시: 생존 분석 및 Kaplan-Meier Plot 생성
 python src/03_survival_analysis.py
 
-# 예시: 고급 시각화 도구 (노모그램, 화산 플롯 등) 생성
-python src/07_advanced_visualization.py
+# 예시: 차원 축소(PCA/t-SNE) 클러스터링
+python src/09_dimensionality_reduction.py
 ```
 
-### 3. 결과 확인
+### 4. 결과 확인
 * 스크립트가 실행되면 결과 이미지(PNG, SVG 등)는 모두 `outputs/` 디렉터리 하위의 카테고리별 폴더에 저장됩니다.
-* 각 분석의 목적, 의료 통계적 의미 및 출력된 **그래프를 해석하는 방법**은 `docs/results_explanation.md` 문서를 참고해 주십시오.
-* 전체 방법론의 기획 의도는 `docs/methodology_plan.md`에서 확인하실 수 있습니다.
+* 전체 파이프라인의 유기적인 흐름과 아키텍처는 `docs/pipeline_architecture.md`에서 확인하세요.
+* 각 분석 그래프를 해석하는 방법은 `docs/results_explanation.md` 문서를 참고해 주십시오.
 
 ---
 

@@ -159,12 +159,21 @@ def main():
     plt.savefig(f'{out_dir}/3a_correlation_heatmap.png', dpi=300)
     plt.close()
 
-    # b. Clustering of Final Biomarkers
-    sns.clustermap(X_final.T, cmap='viridis', figsize=(8, 6), standard_scale=0)
-    plt.title("Hierarchical Clustering of Final Biomarkers", pad=20)
-    plt.savefig(f'{out_dir}/3b_clustering.png', dpi=300)
-    plt.close()
+    # b. Clustering of Final Biomarkers (with Patient Group Colors)
+    patient_colors = pd.Series(y, index=X_final.index).map({0: 'blue', 1: 'red'})
+    cg = sns.clustermap(X_final.T, cmap='viridis', figsize=(10, 8), standard_scale=0, col_colors=patient_colors)
     
+    # Add a legend for the clinical group colors (placed carefully to avoid overlapping the colorbar)
+    import matplotlib.patches as mpatches
+    handles = [mpatches.Patch(color='blue', label='Low Immune (0)'),
+               mpatches.Patch(color='red', label='High Immune (1)')]
+    # We place the legend on the heatmap axis, slightly shifted down to avoid the colorbar
+    cg.ax_heatmap.legend(handles=handles, title='Immune Subtype', bbox_to_anchor=(1.02, -0.1), loc='upper left')
+    
+    cg.fig.suptitle("Hierarchical Clustering of Final Biomarkers", y=1.05, fontsize=16)
+    cg.savefig(f'{out_dir}/3b_clustering.png', dpi=300, bbox_inches='tight')
+    plt.close()
+
     # c. t-test of Model Score by group (BOTH LR and DT)
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
     

@@ -1,67 +1,64 @@
-# 📊 파이프라인 자동화 분석 결과 리포트 (Example Run Report)
+# 📊 단일 스트림 바이오마커 발굴 및 검증 리포트 (Single-Stream Biomarker Pipeline)
 
-이 리포트는 `src/main_pipeline.py` 마스터 스크립트를 실행하여 TCGA 유방암(BRCA) 샘플 데이터를 처리하고, **데이터 로드부터 피처 셀렉션, 모델링, 생존 분석까지 모든 과정이 단일 스트림(Single Stream)으로 연결된** 엔드투엔드(End-to-End) 실행 결과 분석서입니다.
-
----
-
-## 1. 파이프라인 실행 개요 (Execution Summary)
-* **실행 스크립트**: `python src/main_pipeline.py`
-* **아키텍처 특징**: **(단일 스트림 연계)** LASSO에서 뽑힌 최적의 유전자 패널이 그대로 의사결정나무 모델의 입력으로 들어가며, 이 모델이 분류한 환자 위험군(Risk Group)이 다시 생존 분석의 입력으로 들어가 최종 예후를 평가하는 논리적 파이프라인으로 재구성되었습니다.
+이 리포트는 `src/comprehensive_biomarker_pipeline.py`를 구동하여, **분리되어 있던 모든 분석 모듈을 완벽한 하나의 흐름(Single Stream)으로 꿰어낸** 최종 분석 결과서입니다. 모델이 예측하는 '타겟(y)'과 입력 '변수(X)'를 명확히 정의하고, 발굴된 바이오마커가 실제로 임상적 가치가 있는지 다각도로 검증합니다.
 
 ---
 
-## 2. 주요 단계별 상세 분석 및 해석 (Detailed Analysis)
-
-### Phase 1: 핵심 바이오마커 선별 및 기전 분석 (Biomarker Selection & Mechanism)
-수만 개의 노이즈 속에서 환자 생존과 연관된 핵심 변수를 뽑고, 그들 간의 생물학적 연관성을 검증합니다.
-
-* **LASSO 기반 최적 마커 추출 (`11_feature_selection_lasso.py`)**
-  * **결과 요약**: 수만 개의 RNA-seq 유전자 중, 생존 기간(OS_days) 예측에 가장 기여도가 높은 **최정예 8개 유전자**를 L1 페널티를 통해 추출해냈습니다. 
-  * **해석**: 이 8개의 유전자 패널은 이후 이어지는 모든 머신러닝 모델링과 생존 분석의 기준이 됩니다.
-
-* **선별된 최정예 마커 간의 상관관계 히트맵 (`02_categorical_correlation.py`)**
-  * **결과 요약**: 단순한 전체 유전자 상관관계가 아닌, **앞선 11번 단계(LASSO)에서 선별된 8개 핵심 유전자들끼리 서로 어떤 상관관계(Co-expression)를 가지는지** 맵핑했습니다.
-  * **해석**: 뽑혀 나온 상위 8개의 마커들 사이에서도 붉게(양의 상관) 혹은 푸르게(음의 상관) 묶이는 생물학적 네트워크가 확인되며, 특히 생존율(OS_days)과 밀접하게 연동되는 핵심 허브 유전자를 교차 검증해 냈습니다.
-  
-  *(예시: LASSO 선별 유전자 간의 상관관계 히트맵)*
-  ![LASSO Selected Corr](../outputs/categorical_correlation/correlation_heatmap.png)
-
-### Phase 2: 임상 진단 모델 구축 (Clinical Predictive Modeling)
-선별된 8개의 유전자를 조합하여 실제 환자를 위험군으로 분류하는 진단 로직을 세웁니다.
-
-* **임상 진단용 의사결정나무 (`04_predictive_modeling.py`)**
-  * **결과 요약**: **LASSO에서 추출된 8개의 유전자 데이터만**을 입력값으로 받아, 생존(Alive) vs 사망(Deceased) 위험군을 예측하는 Decision Tree 모델을 훈련했습니다.
-  * **해석**: 의사가 직관적으로 "특정 유전자 발현량이 A 이하이면서 B 이상이면 고위험군(High Risk)이다"라는 명시적인 컷오프(Cut-off) 진단 기준을 시각적으로 확립할 수 있도록 돕습니다.
-  
-  *(예시: 예측 의사결정나무 다이어그램)*
-  ![Decision Tree](../outputs/predictive_modeling/decision_tree_viz.svg)
-
-### Phase 3: 생존 및 예후 평가 (Survival & Prognosis)
-의사결정나무 모델이 새롭게 정의한 '위험군'이 실제로 환자의 '시간에 따른 생존율'을 잘 가르고 있는지 최종 검증합니다.
-
-* **Kaplan-Meier 생존 곡선 (`03_survival_analysis.py`)**
-  * **결과 요약**: **앞선 4번 단계(의사결정나무)에서 머신러닝 모델이 예측한 환자별 'High Risk'와 'Low Risk' 라벨**을 그대로 이어받아 두 그룹 간의 Kaplan-Meier 생존 곡선을 그렸습니다.
-  * **해석**: 딥러닝/머신러닝 모델이 "위험하다"고 판단한 붉은색 그룹(High Risk)의 생존 곡선이 파란색 그룹(Low Risk)보다 밑으로 급격히 떨어지는 양상을 보인다면, 우리가 1단계(LASSO)부터 이어온 이 바이오마커 패널 발굴 파이프라인 전체가 임상적으로 대성공했음을 강력하게 입증(Log-rank p < 0.05)하는 최종 근거가 됩니다.
-
-  *(예시: 모델 기반 위험군 카플란-마이어 생존 곡선)*
-  ![Kaplan-Meier Plot](../outputs/survival_plots/km_survival_all.png)
-
-### Phase 4: 임상적 신뢰성 및 유용성 입증 (Clinical Utility & Quality Assurance)
-마지막으로, 연구의 신뢰도를 논문 심사관(Reviewer)에게 증명하는 고급 검증 도구들을 출력합니다.
-
-* **선택 편향 통제 (`06_causal_inference.py` - Love Plot)**
-  * 성향점수매칭(PSM) 적용 후, `Unadjusted` 시절 0.1 점선을 크게 벗어나 들쭉날쭉하던 변수들이 `Adjusted` 상태에서 모두 0.1 점선 안쪽(0.0)으로 수렴하는 것을 Love Plot을 통해 증명했습니다. 관찰 연구의 고질적인 '집단 간 기저 특성 불균형'이 완벽하게 해결되었음을 입증합니다.
-  
-  *(예시: 성향점수매칭 검증 러브 플롯)*
-  ![Love Plot](../outputs/causal_inference/love_plot.png)
-
-* **임상 결정 곡선 (`07_advanced_visualization.py` - DCA Plot)**
-  * 단순히 정확도(Accuracy)가 높다는 것을 넘어, "이 진단 모델을 믿고 치료 방침을 결정했을 때, 무작정 전부 다 치료하거나 아무도 치료하지 않는 것보다 실제로 환자에게 훨씬 더 높은 순이익(Net Benefit)을 가져다준다"는 것을 곡선의 높낮이로 입증해냈습니다.
-  
-  *(예시: 임상 결정 곡선 DCA Plot)*
-  ![DCA Plot](../outputs/advanced_plots/dca_plot.png)
+## 📌 분석 디자인 (Target & Feature Definition)
+* **타겟 변수 (y)**: `ESTIMATE_ImmuneScore` (면역 점수)의 중앙값을 기준으로 환자를 나눈 **고면역군(1) vs 저면역군(0)**의 이진 분류 레이블입니다. (클래스 불균형이 극심했던 '사망 여부' 대신, 생물학적 의미가 크고 분포가 50:50인 종양 미세환경 아형을 타겟으로 교체하여 머신러닝의 학습 능력을 극대화했습니다.)
+* **독립 변수 (X)**: 유방암(BRCA) 샘플의 **수만 개 RNA-seq 유전자 발현량 전체**입니다.
 
 ---
 
-## 3. 총평 (Conclusion)
-단일 스크립트 11개를 통합한 본 파이프라인은 TCGA 데이터를 무리 없이 소화해 내며, 단순한 통계량 출력에 그치지 않고 **'탐색 $\rightarrow$ 발굴 $\rightarrow$ 모델링 $\rightarrow$ 임상 유용성 검증'**이라는 의학 논문 특유의 기승전결 서사를 완벽하게 뒷받침하는 10여 종의 시각화 근거 자료를 성공적으로 자동 산출해 냈습니다.
+## 1. 유효한 변수 선택 (Feature Selection)
+수만 개의 유전자(X) 중에서 타겟(y)을 가장 잘 분류할 수 있는 핵심 유전자를 선별합니다. 단순 LASSO만 돌리는 것이 아니라, 먼저 종속/독립 변수 간의 **상관관계(Pearson Correlation, p<0.01)로 1차 필터링**을 거친 후 **LASSO L1-정규화로 2차 압축**하는 견고한 선택을 진행했습니다.
+
+* **LASSO Coefficient Plot**
+  * 수만 개의 노이즈를 뚫고 최종적으로 살아남은 **최정예 바이오마커 10개**입니다.
+  ![LASSO](../outputs/comprehensive_analysis/1_lasso_coefficients.png)
+
+* **선택된 변수들 간의 상관관계 히트맵 (Correlation Heatmap)**
+  * 이 10개의 바이오마커들이 타겟(`Target`)과 어떻게 연관되며, 본인들끼리 어떻게 동반 발현(Co-expression)하는지 다중공선성과 네트워크를 보여줍니다.
+  ![Correlation](../outputs/comprehensive_analysis/1_correlation_heatmap.png)
+
+---
+
+## 2. 진단 모델 구축 (Diagnostic Modeling)
+선별된 10개의 바이오마커만을 입력값으로 사용하여 환자의 면역 아형을 진단(예측)하는 머신러닝 모델을 구축했습니다.
+* **의사결정나무 (Decision Tree)**: 
+  * "어떤 유전자의 발현량이 얼마 이상이면 고면역군이다"라는 명시적인 바이오마커 컷오프(Cut-off)를 임상의에게 제공합니다.
+  ![Decision Tree](../outputs/comprehensive_analysis/2_decision_tree.svg)
+* **로지스틱 회귀 (Logistic Regression)**: 각 환자별로 '고면역군일 확률(Model Score)'을 연속적인 수치로 산출합니다.
+
+---
+
+## 3. 해당 바이오마커에 대한 다각도 검증 (Validation)
+과연 우리가 뽑아낸 10개의 유전자가 진짜 쓸모 있는 바이오마커일까요? 8가지의 엄격한 검증을 거칩니다.
+
+**1) 계층적 군집화 (Hierarchical Clustering)**
+* 오직 10개의 유전자 발현 패턴만으로 환자들을 클러스터링(바둑판) 했을 때, 타겟 그룹이 뚜렷하게 나뉘는지 종양 이질성을 검증합니다.
+![Clustering](../outputs/comprehensive_analysis/3a_clustering.png)
+
+**2) 모델 예측 점수에 대한 그룹 별 t-test**
+* 모델이 산출한 점수(Model Score)가 실제 저면역군(0)과 고면역군(1)에서 확연히 차이나는지 박스플롯과 p-value로 증명합니다.
+![Model Score t-test](../outputs/comprehensive_analysis/3b_model_score_ttest.png)
+
+**3) 개별 바이오마커 내 변수에 대한 그룹 별 t-test**
+* 선택된 10개의 유전자 각각이 두 그룹에서 실제로 유의미한 발현 차이를 가지는지 개별 박스플롯으로 교차 검증합니다.
+![Biomarker t-test](../outputs/comprehensive_analysis/3c_biomarkers_ttest.png)
+
+**4) 바이오마커 기반 그룹의 생존 분석 (Survival Analysis)**
+* 이 10개 유전자 기반 모델이 "면역군"을 예측했을 뿐만 아니라, 그 분류된 그룹이 환자의 **실제 생존 기간(OS_days)**마저도 유의미하게 가르는지(Kaplan-Meier) 증명합니다.
+![KM Plot](../outputs/comprehensive_analysis/3d_survival_km.png)
+
+**5) 바이오마커만으로의 PCA 및 t-SNE (Dimensionality Reduction)**
+* 수만 개가 아닌 **오직 10개의 유전자 차원**만으로 환자들의 공간을 매핑했을 때, 두 그룹이 섬처럼 명확히 분리되는지 확인합니다.
+![PCA t-SNE](../outputs/comprehensive_analysis/3e_pca_tsne.png)
+
+**6) 임상 결정 곡선(DCA) 및 보정 곡선 (Calibration)**
+* 발굴된 바이오마커 패널 모델이 실제 병원 진료에 쓰일 때 환자에게 순이익(Net Benefit)을 주고(DCA), 예측 확률이 뻥튀기되지 않고 정확한지(Calibration) 평가합니다.
+![DCA Calibration](../outputs/comprehensive_analysis/3f_dca_calibration.png)
+
+**7) 볼케이노 플롯 (Volcano Plot)에서의 위상 확인**
+* 수만 개의 전체 유전자 볼케이노 플롯 상에서, 우리가 뽑은 10개의 바이오마커(빨간 점)가 실제로 가장 양끝 상단(가장 변화가 크고 통계적으로 유의미한 곳)에 위치하고 있음을 시각적으로 쐐기를 박습니다.
+![Volcano Plot](../outputs/comprehensive_analysis/3g_volcano_plot.png)

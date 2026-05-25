@@ -19,34 +19,61 @@ def my_calibration_curve(y_true, y_prob, n_bins=10):
     return prob_true, prob_pred
 
 def plot_nomogram_mock(output_path):
-    """Generates a mock Nomogram template."""
-    fig, ax = plt.subplots(figsize=(10, 6))
+    """Generates a realistic mock Nomogram template."""
+    fig, ax = plt.subplots(figsize=(12, 8))
     
-    variables = ['Age', 'Tumor Size', 'Grade', 'Total Points', 'Survival Probability']
-    y_pos = np.arange(len(variables))
+    # Define axes from top to bottom
+    axes_data = [
+        {"name": "Points", "range": (0, 100), "step": 10, "scale": 1.0, "y": 9},
+        {"name": "Age", "range": (30, 80), "step": 10, "scale": 1.5, "y": 7.5},
+        {"name": "Tumor Size (cm)", "range": (0, 10), "step": 2, "scale": 8.0, "y": 6},
+        {"name": "Grade", "range": (1, 3), "step": 1, "scale": 40.0, "y": 4.5},
+        {"name": "Total Points", "range": (0, 250), "step": 50, "scale": 0.4, "y": 2.5},
+        {"name": "1-Year Survival Prob", "range": (0.1, 0.9), "step": 0.1, "scale": 100.0, "y": 1},
+        {"name": "3-Year Survival Prob", "range": (0.1, 0.9), "step": 0.1, "scale": 80.0, "y": 0}
+    ]
     
-    for i, var in enumerate(variables):
-        ax.plot([0, 100], [i, i], color='black')
-        ax.text(-5, i, var, va='center', ha='right', fontsize=12)
+    for ax_info in axes_data:
+        y = ax_info["y"]
+        ax.plot([0, 100], [y, y], color='black', linewidth=1.5)
+        ax.text(-5, y, ax_info["name"], va='center', ha='right', fontsize=12, fontweight='bold')
         
-        # Add some mock ticks
-        for tick in range(0, 101, 10):
-            ax.plot([tick, tick], [i - 0.1, i + 0.1], color='black')
-            if tick % 20 == 0:
-                ax.text(tick, i + 0.15, str(tick), va='bottom', ha='center', fontsize=8)
+        val_min, val_max = ax_info["range"]
+        step = ax_info["step"]
+        scale = ax_info["scale"]
+        
+        val = val_min
+        while val <= val_max:
+            x_pos = (val - val_min) * scale
+            if x_pos > 100:
+                break
+            
+            ax.plot([x_pos, x_pos], [y, y + 0.2], color='black', linewidth=1)
+            
+            if isinstance(val, int) or val.is_integer():
+                label = str(int(val))
+            else:
+                label = f"{val:.1f}"
+            ax.text(x_pos, y + 0.3, label, va='bottom', ha='center', fontsize=10)
+            
+            val += step
+
+    ax.plot([45, 45], [9, 7.5], color='red', linestyle='--', alpha=0.5)
+    ax.plot([32, 32], [9, 6], color='blue', linestyle='--', alpha=0.5)
+    ax.plot([80, 80], [9, 4.5], color='green', linestyle='--', alpha=0.5)
 
     ax.set_yticks([])
     ax.set_xticks([])
-    ax.set_xlim(-20, 110)
-    ax.set_ylim(-1, len(variables))
+    ax.set_xlim(-30, 110)
+    ax.set_ylim(-1, 10)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_visible(False)
     ax.spines['bottom'].set_visible(False)
     
-    plt.title('Mock Nomogram Template', pad=20)
+    plt.title('Nomogram for Predicting Survival Probability', pad=30, fontsize=16, fontweight='bold')
     plt.tight_layout()
-    plt.savefig(output_path)
+    plt.savefig(output_path, dpi=300)
     plt.close()
 
 def plot_calibration_curve_custom(y_true, y_prob, output_path):

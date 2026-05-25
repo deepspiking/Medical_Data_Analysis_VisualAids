@@ -61,12 +61,25 @@
   * 설명 가능한 AI (Grad-CAM 템플릿 - 가상의 이미지/텐서 활용)
 * **사용 데이터**: `BRCA_RNAseq...`, `BRCA_survival.txt`, 모형 예측 결과 등
 
-### 8. `08_hierarchical_clustering.py` (계층적 군집화)
-* **목표**: 채택된 다수의 유전자/바이오마커에 대해 집단(Case) 간 이질성을 파악하는 히트맵 시각화
+### 9. `09_dimensionality_reduction.py` (차원 축소 및 데이터 군집 시각화)
+* **목표**: 고차원 멀티오믹스 데이터의 시각적 패턴 및 환자 그룹 간 분리도 확인
 * **구현 방법론**:
-  * Hierarchical Clustering (Clustermap)
-  * 환자 그룹별(예: 고병기 vs 저병기) 라벨링을 통한 표현형-유전자 발현 연관성 분석
-* **사용 데이터**: `BRCA_phenotype.txt`, `BRCA_RNAseq_gene...` 또는 Proteomics 데이터
+  * Principal Component Analysis (PCA)
+  * t-Distributed Stochastic Neighbor Embedding (t-SNE)
+* **사용 데이터**: `BRCA_RNAseq...` 또는 Proteomics 데이터, `BRCA_phenotype.txt`
+
+### 10. `10_pathway_enrichment.py` (유전자 셋 강화 및 패스웨이 분석)
+* **목표**: 차발현 유전자(DEG)들이 특정 생물학적 기전(예: mTOR, MAPK pathway)에 집중되어 있는지 검증
+* **구현 방법론**:
+  * Gene Set Enrichment Analysis (GSEA) 또는 KEGG/GO Pathway Enrichment (Bar plot / Enrichment plot)
+* **사용 데이터**: `BRCA_RNAseq...` 기반 DEG 도출 및 가상의 패스웨이 데이터베이스 연동
+
+### 11. `11_feature_selection_lasso.py` (LASSO 기반 바이오마커 피처 셀렉션)
+* **목표**: 수만 개의 유전자/단백질 중 임상적 예후 예측에 가장 핵심적인 다중 바이오마커 패널 추출
+* **구현 방법론**:
+  * LASSO Regression (L1-regularization) 및 Cross-Validation (CV)
+  * Coefficient Path Plot 시각화
+* **사용 데이터**: `BRCA_RNAseq...`, `BRCA_survival.txt` 또는 `BRCA_phenotype.txt` (Target 변수)
 
 ## 개발 및 실행 환경
 * Python 3.8+

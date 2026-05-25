@@ -1,4 +1,4 @@
-# 📊 단일 스트림 바이오마커 발굴 및 이중 검증 리포트 (Single-Stream Biomarker Pipeline)
+# 📊 End-to-End 바이오마커 발굴 및 임상 검증 리포트 (TCGA-BRCA Immune Subtype Classification)
 
 이 리포트는 `src/comprehensive_biomarker_pipeline.py`를 구동하여, **데이터 로드부터 이중 피처 셀렉션(LASSO + Decision Tree), 머신러닝 예측(DT & LR), 그리고 생존 및 임상 유용성 검증까지 모든 과정이 하나로 꿰어진(Single Stream)** 최종 분석 결과서입니다. 
 

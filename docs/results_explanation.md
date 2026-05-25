@@ -20,16 +20,21 @@
 ![Box Plot](../outputs/comparative_analysis/boxplot_pvalue.png)
 
 ## 2. 범주형 데이터 및 상관관계 분석 (`02_categorical_correlation.py`)
-* **입력**: 두 개의 연속형 바이오마커 수치.
-* **출력**: 회귀 추세선(Regression Line)과 상관계수(r)가 포함된 산점도(Scatter Plot).
-* **의료 통계학적 의미**: 두 바이오마커가 체내에서 동일한 생물학적 경로를 공유하여 동반 상승/하강하는지 확인합니다.
+* **입력**: 범주형 분석(예: 특정 면역 점수의 상/하위 그룹), 상관 분석(여러 연속형 바이오마커 및 임상 점수).
+* **출력**: P-value가 표기된 누적 막대 그래프(Stacked Bar Plot) 및 다중 변수 상관관계 히트맵(Correlation Matrix Heatmap).
+* **의료 통계학적 의미**: 교차 분석을 통해 환자의 임상 병리적 인자들 사이에 독립성이 있는지 확인하고, 다중 상관 분석 히트맵을 통해 여러 바이오마커들이 군집을 이루어 상호작용하는지 전체적인 네트워크 강도를 측정합니다.
 
 **💡 그래프 읽는 법:**
-* **각각의 점(Dot)**: 환자 1명을 의미합니다. 가로축은 마커 A의 수치, 세로축은 마커 B의 수치입니다.
-* **직선(Regression Line)**: 점들이 띠고 있는 전반적인 방향성(추세)입니다. 우상향하면 '양의 상관관계(비례)', 우하향하면 '음의 상관관계(반비례)'입니다.
-* **상관계수 (r 또는 rho)**: 선형적인 밀접도를 나타내며 -1부터 +1 사이의 값을 가집니다. 0.3 이상이면 약한 상관관계, 0.5 이상이면 뚜렷한 상관관계, 0.7 이상이면 매우 강한 상관관계가 있다고 봅니다.
+* **누적 막대 그래프 (Categorical Barplot)**: 
+  * 가로축은 그룹 A(예: 저기질군 vs 고기질군), 색상은 그룹 B(예: 고면역군 vs 저면역군)의 비율을 나타냅니다.
+  * 막대의 색상 비율이 확연히 다르다면 두 그룹 간에 강한 연관성이 있다는 뜻이며, 상단의 **Chi-square P-value**가 0.05 미만이면 우연이 아님을 통계적으로 입증합니다.
+* **상관관계 히트맵 (Correlation Heatmap)**:
+  * 가로축과 세로축이 만나는 칸(Cell)에 있는 수치가 바로 상관계수(r)입니다.
+  * **색상**: 붉은색에 가까울수록 강한 양의 상관관계(비례), 푸른색에 가까울수록 강한 음의 상관관계(반비례)를 띱니다.
+  * **별표(`*`)**: `*` (p<0.05), `**` (p<0.01), `***` (p<0.001) 등 별표가 붙어 있는 칸은 그 상관관계가 통계적으로 매우 확고하다는 뜻입니다. 별이 없는 칸은 상관관계가 없거나 노이즈일 확률이 큽니다.
 
-![Scatter Plot](../outputs/categorical_correlation/scatter_corr.png)
+![Categorical Bar Plot](../outputs/categorical_correlation/categorical_barplot.png)
+![Correlation Heatmap](../outputs/categorical_correlation/correlation_heatmap.png)
 
 ## 3. 생존 및 예후 분석 (`03_survival_analysis.py`)
 * **입력**: 환자의 추적 관찰 기간과 사망/재발 여부.

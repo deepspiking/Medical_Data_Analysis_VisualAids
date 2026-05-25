@@ -76,8 +76,29 @@ def main():
     if len(selected_indices) < 3 or len(selected_indices) > 20:
         top_indices = np.argsort(np.abs(coefs))[-10:]
         lasso_genes = X_filtered.columns[top_indices].tolist()
+        valid_coefs = coefs[top_indices]
     else:
         lasso_genes = X_filtered.columns[selected_indices].tolist()
+        valid_coefs = coefs[selected_indices]
+        
+    plt.figure(figsize=(10, 6))
+    plt.barh(lasso_genes, valid_coefs, color='skyblue')
+    plt.title('LASSO Selected Biomarkers (Target: High Immune Subtype)')
+    plt.xlabel('L1 Coefficient')
+    plt.tight_layout()
+    plt.savefig(f'{out_dir}/1_lasso_coefficients.png', dpi=300)
+    plt.close()
+    
+    # 1b. Correlation Heatmap of LASSO genes
+    X_lasso_corr = df_merged[lasso_genes].copy()
+    X_lasso_corr['Target'] = y
+    corr_mat1 = X_lasso_corr.corr(method='spearman')
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(corr_mat1, annot=True, fmt=".2f", cmap='coolwarm', center=0)
+    plt.title("Correlation: LASSO Selected Biomarkers vs Target")
+    plt.tight_layout()
+    plt.savefig(f'{out_dir}/1_correlation_heatmap.png', dpi=300)
+    plt.close()
         
     # ---------------------------------------------------------
     # 2. Diagnostic Model Construction & Final Biomarker Extraction
@@ -161,16 +182,19 @@ def main():
 
     # b. Clustering of Final Biomarkers (with Patient Group Colors)
     patient_colors = pd.Series(y, index=X_final.index).map({0: 'blue', 1: 'red'})
-    cg = sns.clustermap(X_final.T, cmap='viridis', figsize=(10, 8), standard_scale=0, col_colors=patient_colors)
+    # Use z_score=0 to standardize row-wise (gene expression amount converted to z-score)
+    cg = sns.clustermap(X_final.T, cmap='viridis', figsize=(10, 8), z_score=0, col_colors=patient_colors)
     
-    # Add a legend for the clinical group colors (placed carefully to avoid overlapping the colorbar)
+    # Add explicit label to the colorbar legend
+    cg.ax_cbar.set_ylabel('Z-score (Gene Expression)', fontsize=12, fontweight='bold')
+    
+    # Add a legend for the clinical group colors
     import matplotlib.patches as mpatches
     handles = [mpatches.Patch(color='blue', label='Low Immune (0)'),
                mpatches.Patch(color='red', label='High Immune (1)')]
-    # We place the legend on the heatmap axis, slightly shifted down to avoid the colorbar
     cg.ax_heatmap.legend(handles=handles, title='Immune Subtype', bbox_to_anchor=(1.02, -0.1), loc='upper left')
     
-    cg.fig.suptitle("Hierarchical Clustering of Final Biomarkers", y=1.05, fontsize=16)
+    cg.fig.suptitle("Hierarchical Clustering of Final Biomarkers (Z-score)", y=1.05, fontsize=16)
     cg.savefig(f'{out_dir}/3b_clustering.png', dpi=300, bbox_inches='tight')
     plt.close()
 

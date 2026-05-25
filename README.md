@@ -42,11 +42,3 @@ python src/09_dimensionality_reduction.py
 
 ---
 
-## 📖 참고 문헌 및 자료 (References)
-이 브랜치의 코드 파이프라인과 시각화 방법론은 다음 자료들을 심층 분석 및 참고하여 개발되었습니다.
-
-* **의료 데이터 분석 필수 방법론 및 시각화 도구 요약 (Google Docs)**
-  * 링크: [Methodology Summary Docs](https://docs.google.com/document/d/10X8jf6L8_PoPvcxdMODvtSFAUmv7hRngIzUBJWXtLbU/edit?usp=sharing)
-* **참고 연구 논문 아카이브 (Google Drive)**
-  * 링크: [Reference Papers Drive](https://drive.google.com/drive/folders/1HLuMjDPXKpNBRTDru3snUya64gqgskQR?usp=sharing)
-  * *분석 대상 논문 예시: Cancer Research and Treatment, Experimental & Molecular Medicine, Modern Pathology 등 다수의 중개연구 논문*

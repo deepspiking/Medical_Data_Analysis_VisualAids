@@ -200,23 +200,49 @@ def main():
     plt.savefig(f'{out_dir}/3d_biomarkers_ttest.png', dpi=300)
     plt.close()
     
-    # e. Survival Analysis based on Predicted Group (Using LR Predictions)
+    # e. Survival Analysis based on Predicted Group (LR vs DT)
     T = df_merged['OS_days']
     E = df_merged['OS_event']
-    plt.figure(figsize=(8, 6))
-    kmf = KaplanMeierFitter()
-    if sum(df_merged['LR_Predicted_Group'] == 1) > 0 and sum(df_merged['LR_Predicted_Group'] == 0) > 0:
-        kmf.fit(T[df_merged['LR_Predicted_Group'] == 1], E[df_merged['LR_Predicted_Group'] == 1], label='LR High Immune')
-        kmf.plot(color='red')
-        kmf.fit(T[df_merged['LR_Predicted_Group'] == 0], E[df_merged['LR_Predicted_Group'] == 0], label='LR Low Immune')
-        kmf.plot(color='blue')
-        res = logrank_test(T[df_merged['LR_Predicted_Group'] == 1], T[df_merged['LR_Predicted_Group'] == 0], 
-                           event_observed_A=E[df_merged['LR_Predicted_Group'] == 1], event_observed_B=E[df_merged['LR_Predicted_Group'] == 0])
-        plt.text(0.05, 0.1, f"Log-rank p={res.p_value:.4f}", transform=plt.gca().transAxes)
-    plt.title("Survival Analysis by LR Predicted Group")
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+
+    # LR Plot
+    kmf_lr_high = KaplanMeierFitter()
+    kmf_lr_low = KaplanMeierFitter()
+    mask_lr_high = df_merged['LR_Predicted_Group'] == 1
+    mask_lr_low = df_merged['LR_Predicted_Group'] == 0
+    if sum(mask_lr_high) > 0 and sum(mask_lr_low) > 0:
+        kmf_lr_high.fit(T[mask_lr_high], E[mask_lr_high], label='LR High Immune')
+        kmf_lr_high.plot_survival_function(ax=axes[0], color='red')
+        kmf_lr_low.fit(T[mask_lr_low], E[mask_lr_low], label='LR Low Immune')
+        kmf_lr_low.plot_survival_function(ax=axes[0], color='blue')
+        res_lr = logrank_test(T[mask_lr_high], T[mask_lr_low], 
+                           event_observed_A=E[mask_lr_high], event_observed_B=E[mask_lr_low])
+        axes[0].text(0.05, 0.1, f"Log-rank p={res_lr.p_value:.4f}", transform=axes[0].transAxes)
+    axes[0].set_title("Survival Analysis (Logistic Regression)")
+    axes[0].set_xlabel('Days')
+    axes[0].set_ylabel('Survival Probability')
+
+    # DT Plot
+    kmf_dt_high = KaplanMeierFitter()
+    kmf_dt_low = KaplanMeierFitter()
+    mask_dt_high = df_merged['DT_Predicted_Group'] == 1
+    mask_dt_low = df_merged['DT_Predicted_Group'] == 0
+    if sum(mask_dt_high) > 0 and sum(mask_dt_low) > 0:
+        kmf_dt_high.fit(T[mask_dt_high], E[mask_dt_high], label='DT High Immune')
+        kmf_dt_high.plot_survival_function(ax=axes[1], color='red', linestyle='--')
+        kmf_dt_low.fit(T[mask_dt_low], E[mask_dt_low], label='DT Low Immune')
+        kmf_dt_low.plot_survival_function(ax=axes[1], color='blue', linestyle='--')
+        res_dt = logrank_test(T[mask_dt_high], T[mask_dt_low], 
+                           event_observed_A=E[mask_dt_high], event_observed_B=E[mask_dt_low])
+        axes[1].text(0.05, 0.1, f"Log-rank p={res_dt.p_value:.4f}", transform=axes[1].transAxes)
+    axes[1].set_title("Survival Analysis (Decision Tree)")
+    axes[1].set_xlabel('Days')
+    axes[1].set_ylabel('Survival Probability')
+
+    plt.tight_layout()
     plt.savefig(f'{out_dir}/3e_survival_km.png', dpi=300)
     plt.close()
-    
+
     # f. PCA & t-SNE of ONLY FINAL biomarkers
     if len(final_biomarkers) > 1:
         pca = PCA(n_components=2).fit_transform(X_final_scaled)

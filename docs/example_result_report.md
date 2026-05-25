@@ -62,7 +62,7 @@ LASSO 후보군을 다시 의사결정나무(Decision Tree)에 학습시킵니�
 ![Volcano Plot](../outputs/comprehensive_analysis/3h_volcano_plot.png)
 
 **6) 바이오마커 기반 그룹의 생존 분석 (Survival Analysis)**
-* 이 로지스틱 회귀 모델이 예측한 확률(>0.5)로 나눈 그룹이, 면역도를 넘어 실제 환자의 **생존 기간(OS_days)**마저도 유의미하게 가르는지 카플란-마이어(Kaplan-Meier) 곡선으로 증명합니다.
+* 로지스틱 회귀(LR)와 의사결정나무(DT)가 예측한 위험군 라벨이 실제 환자의 **생존 기간(OS_days)**마저도 유의미하게 가르는지 각각 2개의 카플란-마이어(Kaplan-Meier) 곡선을 나란히 배치하여 모델 간의 생존 예측 능력을 전격 비교합니다.
 ![KM Plot](../outputs/comprehensive_analysis/3e_survival_km.png)
 
 **7) 임상 결정 곡선(DCA) 및 보정 곡선 (Calibration)**

@@ -1,8 +1,5 @@
 import pandas as pd
 import numpy as np
-np.float = float
-np.int = int
-np.bool = bool
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LogisticRegressionCV
 from sklearn.preprocessing import StandardScaler

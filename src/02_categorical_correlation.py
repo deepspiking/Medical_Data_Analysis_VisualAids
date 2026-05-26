@@ -1,9 +1,6 @@
 import os
 import pandas as pd
 import numpy as np
-np.float = float
-np.int = int
-np.bool = bool
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats

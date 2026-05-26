@@ -2,12 +2,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# Patch numpy to fix compatibility issues with older sklearn/statsmodels versions
-np.int = int
-np.float = float
-np.bool = bool
-np.MachAr = type('MachAr', (), {'eps': np.finfo(float).eps})
-
 from sklearn.metrics import cohen_kappa_score
 import statsmodels.api as sm
 

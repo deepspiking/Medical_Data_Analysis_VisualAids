@@ -1,20 +1,11 @@
 import numpy as np
 
-# Monkey-patch deprecated np.float to fix scikit-learn version mismatch
-np.float = float
-np.int = int
-np.object = object
-np.bool = bool
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import NearestNeighbors
 import os
-
-# Create results dir if needed
-os.makedirs("results", exist_ok=True)
 
 def generate_mock_clinical_data(n=1000):
     """Generates mock clinical data with confounding variables."""

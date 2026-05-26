@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+dist/
+build/
+
+# OpenCode session state
+.omo/run-continuation/
+
+# Generated runtime data (regeneratable)
+outputs/pipeline_state/master_data.csv
+
+# Temporary scratch files
+results/
+old_results.md
+patch_*.py

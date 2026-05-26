@@ -1,6 +1,6 @@
-# Medical Data Analysis & Visual Aids (gowun 브랜치)
+# Medical Data Analysis & Visual Aids
 
-본 프로젝트(gowun 브랜치)는 다중 오믹스(Multi-omics) 및 임상 병리 데이터를 활용하여 종양 연구와 의료 통계 분석에 필요한 핵심 방법론과 고도화된 시각화 파이프라인을 파이썬(Python)으로 구현한 코드베이스입니다.
+본 프로젝트는 다중 오믹스(Multi-omics) 및 임상 병리 데이터를 활용하여 종양 연구와 의료 통계 분석에 필요한 핵심 방법론과 고도화된 시각화 파이프라인을 파이썬(Python)으로 구현한 코드베이스입니다.
 
 ---
 
@@ -41,4 +41,3 @@ python src/09_dimensionality_reduction.py
 * 각 분석 그래프를 해석하는 방법은 `docs/results_explanation.md` 문서를 참고해 주십시오.
 
 ---
-

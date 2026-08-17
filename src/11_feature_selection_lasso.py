@@ -3,64 +3,74 @@ import numpy as np
 np.float = float
 np.int = int
 np.bool = bool
+np.object = object
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LogisticRegressionCV
 from sklearn.preprocessing import StandardScaler
+from scipy.stats import pearsonr
 import os
 
 def main():
     os.makedirs('outputs/predictive_modeling', exist_ok=True)
     os.makedirs('outputs/pipeline_state', exist_ok=True)
 
-    print("Loading RNAseq data...")
-    df_rna = pd.read_csv('BRCA/BRCA_RNAseq_gene_RSEM_coding_UQ_1500_log2_Tumor.txt', sep='\t', index_col=0).T
+    print("Defining X and y...")
+    pheno_df = pd.read_csv('BRCA/BRCA_phenotype.txt', sep='\t', index_col='idx')
+    rna_df = pd.read_csv('BRCA/BRCA_RNAseq_gene_RSEM_coding_UQ_1500_log2_Tumor.txt', sep='\t', index_col=0).T
     
-    # Take top 500 variable genes to speed up LASSO
-    top_genes = df_rna.var().nlargest(500).index
-    df_rna_filtered = df_rna[top_genes]
-
-    print("Loading survival data...")
-    df_surv = pd.read_csv('BRCA/BRCA_survival.txt', sep='\t', index_col=0)
+    pheno_df.index = pheno_df.index.astype(str)
+    rna_df.index = rna_df.index.astype(str)
     
-    # Merge
-    df_merged = df_rna_filtered.join(df_surv['OS_event'], how='inner').dropna(subset=['OS_event'])
+    # y = High/Low ImmuneScore
+    median_immune = pheno_df['ESTIMATE_ImmuneScore'].median()
+    pheno_df['Target_y'] = (pheno_df['ESTIMATE_ImmuneScore'] > median_immune).astype(int)
     
-    X = df_merged.drop(columns=['OS_event'])
-    y = df_merged['OS_event'].values
+    df_merged = rna_df.join(pheno_df['Target_y'], how='inner').dropna()
+    X = df_merged.drop(columns=['Target_y'])
+    y = df_merged['Target_y'].values
     
-    print("Standardizing features & Running LASSO (Logistic L1)...")
+    # 1. Feature Selection (Correlation filter + LASSO)
+    print("Filtering features by correlation with y...")
+    corrs = []
+    for col in X.columns:
+        r, p = pearsonr(X[col], y)
+        if p < 0.05:
+            corrs.append((col, abs(r)))
+    
+    corrs.sort(key=lambda x: x[1], reverse=True)
+    top_candidates = [x[0] for x in corrs[:300]]
+    X_filtered = X[top_candidates]
+    
+    print("Standardizing and running LASSO...")
     scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
+    X_scaled = scaler.fit_transform(X_filtered)
     
-    # Use LogisticRegressionCV with L1 penalty for classification feature selection
-    lasso_cv = LogisticRegressionCV(cv=5, penalty='l1', solver='liblinear', random_state=42, class_weight='balanced', max_iter=1000)
+    lasso_cv = LogisticRegressionCV(cv=5, penalty='l1', solver='liblinear', random_state=42, max_iter=1000)
     lasso_cv.fit(X_scaled, y)
     
-    # Extract selected features
     coefs = lasso_cv.coef_[0]
-    selected_indices = np.where(coefs != 0)[0]
-    selected_genes = X.columns[selected_indices].tolist()
+    selected_genes = X_filtered.columns[coefs != 0].tolist()
     
-    # Fallback if too few/many genes selected
-    if len(selected_genes) < 3 or len(selected_genes) > 15:
-        print(f"LASSO selected {len(selected_genes)} genes. Falling back to top 8 by absolute coefficient for stable pipeline...")
-        top_indices = np.argsort(np.abs(coefs))[-8:]
-        selected_genes = X.columns[top_indices].tolist()
-        
-    print(f"\nFinal Selected Features for downstream pipeline: {selected_genes}")
+    if len(selected_genes) < 3 or len(selected_genes) > 20:
+        top_indices = np.argsort(np.abs(coefs))[-10:]
+        selected_genes = X_filtered.columns[top_indices].tolist()
+        valid_coefs = coefs[top_indices]
+    else:
+        valid_coefs = coefs[coefs != 0]
+
+    print(f"Selected {len(selected_genes)} genes: {selected_genes}")
     
-    # Save to state file for other scripts
     with open('outputs/pipeline_state/selected_features.txt', 'w') as f:
         f.write('\n'.join(selected_genes))
         
-    # Dummy plot for compatibility
-    plt.figure(figsize=(8, 5))
-    plt.barh(selected_genes, coefs[np.isin(X.columns, selected_genes)])
-    plt.title('LASSO Selected Features & Coefficients')
-    plt.xlabel('Coefficient Value')
+    df_merged[['Target_y'] + selected_genes].to_csv('outputs/pipeline_state/master_data.csv')
+    
+    plt.barh(selected_genes, valid_coefs)
+    plt.title('LASSO Selected Biomarkers (Target: Immune Subtype)')
+    plt.xlabel('Coefficient')
     plt.tight_layout()
     plt.savefig('outputs/predictive_modeling/lasso_path_plot.png')
     plt.close()
-    
+
 if __name__ == "__main__":
     main()

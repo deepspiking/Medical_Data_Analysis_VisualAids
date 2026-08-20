@@ -161,7 +161,7 @@ WPOI5, HPV/P16, CCRT(방사선치료 여부) 등
 | **1** | 기존 분석(docx)이 재현되나? | Python 재현 + bootstrap |
 | **2** | 병기 단독으로 예후 구분? | C-index 비교 (univariate) |
 | **3** | 공변량 보정 후에도 우월? | Multivariate Cox (대체·증분) |
-| **4** | ML 모델로도 확인? | TabICL + 단순 모델 + 회귀 |
+| **4** | 다른 예측 방식과 비교해도? | 생존시간 회귀 비교 |
 | **5** | 어떤 score든 동일 기준으로? | score↔생존 통합 |
 
 ### 4.2 검증 전략 3종 (S1-S3)
@@ -175,15 +175,16 @@ WPOI5, HPV/P16, CCRT(방사선치료 여부) 등
 > S2·S3(다변량)이 **주 판정**. 단일 변수 우월성은 다른 변수 때문일 수 있어
 > 교란을 보정해야 하기 때문.
 
-### 4.3 실험 4 상세 (ML 모델)
+### 4.3 실험 4 상세 (생존시간 회귀 비교)
 
-- **TabICL**: foundation model (in-context learning). **피팅 데이터를 bootstrap으로
-  4개 시드 × 5-fold CV** → 각 시드에서 score → 시드 간 순위 안정성 확인
-- **단순 모델**: Logistic / Lasso / DecisionTree (AUC, 24개월 이진화)
-- **생존시간 회귀 (4e)**: 24개월 이진화 대신 생존기간을 직접 회귀
-  - AFT(LogNormal/Weibull): 중도절단 정식 처리
-  - Lasso/Ridge/DecisionTree: naive + IPCW 가중
-  - StandardScaler / PowerTransformer normalization 비교
+- 24개월 이진화(AUC) 대신 **생존기간을 직접 회귀**로 예측해, "병기라는 이산 순위"와
+  "연속 예측" 중 어느 쪽이 더 잘 구분하는지 비교
+- AFT(LogNormal/Weibull): 중도절단을 정식 처리하는 생존회귀
+- 비교 대상: 수정병기 (실험 2의 C-index)
+
+> 탐색적으로 시도했던 TabICL(LLM 기반 foundation model)과 단순 분류 모델
+> (Logistic/Lasso/DecisionTree) 비교는 결과가 유의하지 않아 본문에서 제외하고,
+> 상세는 별도 파일(`실험4_결과_해석.md`)로 보관합니다.
 
 ---
 
@@ -223,32 +224,22 @@ WPOI5, HPV/P16, CCRT(방사선치료 여부) 등
 ![S3 증분 비교 (핵심 증거)](results/exp1/실험3_S3_increment.png)
 *수정병기 증분(빨강)이 기존병기 증분(파랑)보다 큼 — 3개 y 모두*
 
-### 5.4 실험 4 — ML 모델
+### 5.4 실험 4 — 생존회귀와 비교 (탐색적 보조)
 
-**TabICL 안정성**: PFS ρ=0.54, DSS ρ=0.49 (중간 순위 안정), LRRFS ρ=0.09 (불안정)
+**생존시간 회귀 C-index vs 수정병기**:
 
-![TabICL 순위 안정성](results/exp1/plots/E4_tabicl_rho.png)
-*시드 간 score 순위 상관 — PFS·DSS 중간, LRRFS 낮음*
-
-**AUC (24개월)**:
-
-| 모델 | PFS | DSS | LRRFS |
+| y | 회귀 최고 | 수정병기 (실험 2) | 비교 |
 |---|---|---|---|
-| Lasso | **0.614** | **0.752** | 0.528 |
-| TabICL | 0.572 | 0.623 | 0.495 |
-
-![모델별 AUC 비교](results/exp1/plots/E4_AUC_models.png)
-*단순 모델(Lasso)이 TabICL보다 AUC 높음 — DSS에서 격차 최대*
-
-**생존시간 회귀 C-index**:
-
-| 모델 | PFS | DSS | LRRFS |
-|---|---|---|---|
-| AFT_LogNormal | 0.576 | **0.697** | 0.528 |
-| TabICL_naive | **0.589** | 0.679 | 0.532 |
+| PFS | 0.589 (TabICL) | **0.696** | 수정병기 우월 |
+| DSS | 0.697 (AFT) | **0.808** | 수정병기 우월 |
+| LRRFS | 0.536 (DT-IPCW) | **0.673** | 수정병기 우월 |
 
 ![회귀 모델 C-index](results/exp1/plots/E4e_regression_Cindex.png)
-*생존시간 회귀 — DSS에서 AFT(중도절단 처리)가 최고*
+*생존시간 회귀 — DSS에서 AFT(중도절단 정식 처리)가 최고(0.697)*
+
+- 회귀(연속 시점 예측)는 순위(병기)보다 근본적으로 어려운 과제 → C-index가 낮은 것은 자연스러움
+- 그럼에도 **수정병기가 회귀 예측보다도 더 잘 구분** → 수정병기 우월성의 보강 증거
+- (TabICL·단순 분류 모델 상세는 부록 `실험4_결과_해석.md` 참조)
 
 ### 5.5 실험 5 — score↔생존 통합 ✅
 
@@ -280,11 +271,13 @@ WPOI5, HPV/P16, CCRT(방사선치료 여부) 등
 - C-index는 중도절단을 처리하는 **순위 기반** 지표 — 이 연구의 주 지표
 - AUC(이진화)는 24개월이라는 임의 시점을 정해야 해서 정보 손실
 
-### 6.3 ML 모델의 한계 — n=133
+### 6.3 회귀 예측의 한계 — 병기라는 "이산 순위"가 실용적
 
-- TabICL은 300~60K 샘플로 사전학습 → **n=133은 범위 밖** → 불안정
-- 단순 모델(Lasso 등)이 소표본에서 더 실용적
-- **"복잡한 모델이 항상 낫다"는 가정이 소표본 의료 데이터에선 성립 안 함** — 좋은 사례
+- 생존시간을 **직접 회귀**로 예측하는 것은 "위험도 순위만 매기면 되는" 병기보다
+  근본적으로 어려운 과제 → C-index가 낮게 나오는 것은 자연스러움
+- 그럼에도 **수정병기가 회귀 예측보다도 더 잘 구분** → 수정병기 우월성의 보강 증거
+- (탐색적으로 시도한 TabICL 등 ML 모델 비교는 결과가 유의하지 않아 본문에서
+  제외 — 상세는 부록 `실험4_결과_해석.md` 참조)
 
 ### 6.4 normalization
 
@@ -345,42 +338,41 @@ python3 experiment_2_univariate.py
 # 4. 실험 3 (S2/S3 multivariate)
 python3 experiment_3_multivariate.py
 
-# 5. 실험 4 (TabICL CV 안정성) — Python 3.10 env 필요
-conda activate tabicl_env
-python3 experiment_4_tabicl_rsf.py
-
-# 6. 실험 4 보조 (단순 모델 AUC, 회귀)
-python3 experiment_4d_simple_models.py
+# 5. 실험 4 (생존회귀 비교) — 메인 env
 python3 experiment_4e_survival_regression.py
 
-# 7. 실험 5 (score↔생존)
+# 6. 실험 5 (score↔생존)
 python3 experiment_5_score_survival.py
 
-# 8. 시각화 + 검증
+# 7. 시각화 + 검증
 python3 visualize_results.py
 python3 validation_tools.py
 ```
 
 **결과 파일**: `results/exp1/` 아래 CSV(데이터) + `plots/`(차트) + `validation/`(검증)
 
+> ⚠️ **부록**: TabICL 관련 실험(`experiment_4_tabicl_rsf.py`, `experiment_4d_simple_models.py`)은
+> 본문에서 제외된 탐색적 분석이며, Python 3.10(`tabicl_env`)에서만 실행됩니다.
+> 재현하려면 `실험4_결과_해석.md`의 실행 가이드를 참조하세요.
+
 ---
 
 ## 9. 알려진 이슈 / 주의사항
 
-1. **TabICL segfault**: 이 환경(Apple Silicon CPU)에서 불규칙 segfault 발생
-   → OMP_NUM_THREADS=1 + subprocess 격리 + 체크포인트 구조로 우회
-2. **SHAP 미수행**: TabICL segfault로 SHAP 불가 → permutation importance로 대체 시도했으나
-   계산량 문제로 중단 (실험 4c)
-3. **RandomForest 제외**: 소표본에서 fold당 수 분 — 비현실적
-4. **lifelines 버전 차이**: 0.27(기본 env) vs 0.30(tabicl_env) — AFT 클래스명
+1. **lifelines 버전 차이**: 0.27(기본 env) vs 0.30(tabicl_env) — AFT 클래스명
    (`LogNormalAFT` → `LogNormalAFTFitter`) 주의
-5. **'x' 처리 관례**: 정세운 선생님 확인 필요 (0으로 처리 vs NaN 유지)
+2. **'x' 처리 관례**: 정세운 선생님 확인 필요 (0으로 처리 vs NaN 유지)
+3. **C-index 방향**: `lifelines.concordance_index`는 score 방향에 따라 결과가 반전될 수
+   있으므로, 이 프로젝트는 `experiment_utils.fast_cindex`(벡터화 Harrell)로 통일
+4. **TabICL 부록 이슈** (본문 제외 분석): Apple Silicon에서 불규칙 segfault →
+   OMP_NUM_THREADS=1 + subprocess 격리 + 체크포인트로 우회. SHAP 불가·permutation
+   importance 계산량 문제로 중단 (실험 4c) — 상세는 `실험4_결과_해석.md`
 
 ---
 
 ## 10. 결론 (한 문장)
 
-> **수정병기(mStage·mTstage)는 4가지 독립 방법론 모두에서 기존 병기보다
-> 구강암 환자의 예후를 더 잘 구분하며(C-index 최대 0.83), 특히 mTstage가
-> DSS에서 가장 큰 개선을 보였다. TabICL은 n=133 소표본에서 불안정하여
-> 단순 모델(Cox·Lasso)이 실용적 근거이다.**
+> **수정병기(mStage·mTstage)는 여러 독립 방법론(univariate Cox, multivariate Cox,
+> score 직접 상관, 생존회귀) 모두에서 기존 병기보다 구강암 환자의 예후를
+> 더 잘 구분하며(C-index 최대 0.83), 특히 mTstage가 DSS에서 가장 큰 개선
+> (ΔC +0.105)을 보였다.**

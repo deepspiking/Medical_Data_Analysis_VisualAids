@@ -1,0 +1,10 @@
+﻿y,model,OOB_C
+PFS,RSF_full,0.9779
+PFS,RSF_ajcc8th,0.9772
+PFS,RSF_mStage,0.9755
+DSS,RSF_full,0.8697
+DSS,RSF_ajcc8th,0.8551
+DSS,RSF_mStage,0.8282
+LRRFS,RSF_full,0.9683
+LRRFS,RSF_ajcc8th,0.9686
+LRRFS,RSF_mStage,0.9559

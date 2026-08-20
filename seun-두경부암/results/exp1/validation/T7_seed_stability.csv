@@ -1,0 +1,12 @@
+﻿,,dC,dC,dC,dC,NRI,NRI,NRI,NRI
+,,mean,std,min,max,mean,std,min,max
+label,pair,,,,,,,,
+DSS,mNstage vs N stage,-0.013,0.0,-0.013,-0.013,0.389,0.0,0.389,0.389
+DSS,mStage vs ajcc8th,0.052,0.0,0.052,0.052,0.278,0.0,0.278,0.278
+DSS,mTstage vs T stage,0.105,0.0,0.105,0.105,1.061,0.0,1.061,1.061
+LRRFS,mNstage vs N stage,0.005,0.0,0.005,0.005,0.461,0.0,0.461,0.461
+LRRFS,mStage vs ajcc8th,0.079,0.0,0.079,0.079,1.039,0.0,1.039,1.039
+LRRFS,mTstage vs T stage,0.082,0.0,0.082,0.082,0.631,0.0,0.631,0.631
+PFS,mNstage vs N stage,-0.0,0.0,-0.0,-0.0,0.584,0.0,0.584,0.584
+PFS,mStage vs ajcc8th,0.062,0.0,0.062,0.062,1.074,0.0,1.074,1.074
+PFS,mTstage vs T stage,0.077,0.0,0.077,0.077,0.717,0.0,0.717,0.717

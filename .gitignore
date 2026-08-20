@@ -13,6 +13,17 @@ build/
 outputs/pipeline_state/master_data.csv
 
 # Temporary scratch files
-results/
+/results/
 old_results.md
 patch_*.py
+
+# Secrets — 절대 커밋 금지
+.env
+seun-두경부암/.env
+
+# 불필요 파일
+__pycache__/
+*.pyc
+*.log
+.DS_Store
+seun-두경부암/results/exp1/tabicl_ckpt/

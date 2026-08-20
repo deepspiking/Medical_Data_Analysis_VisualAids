@@ -1,0 +1,55 @@
+﻿column,role,origin,description
+age,ordinal,age,서수형 수치 (높을수록 중증/진행)
+TIL,ordinal,TIL,서수형 수치 (높을수록 중증/진행)
+differentiation,ordinal,differentiation,서수형 수치 (높을수록 중증/진행)
+T stage,ordinal,T stage,서수형 수치 (높을수록 중증/진행)
+ajcc8th_STAGE,ordinal,ajcc8th_STAGE,서수형 수치 (높을수록 중증/진행)
+mTstage,ordinal,mTstage,서수형 수치 (높을수록 중증/진행)
+mNstage,ordinal,mNstage,서수형 수치 (높을수록 중증/진행)
+mStage,ordinal,mStage,서수형 수치 (높을수록 중증/진행)
+tumor size (cm),ordinal,tumor size (cm),서수형 수치 (높을수록 중증/진행)
+DOI (mm),ordinal,DOI (mm),서수형 수치 (높을수록 중증/진행)
+성별,binary,성별,이분형 0/1
+budding_01vs23,binary,budding_01vs23,이분형 0/1
+PNI,binary,PNI,이분형 0/1
+LVI,binary,LVI,이분형 0/1
+RM,binary,RM,이분형 0/1
+TSR,binary,TSR,이분형 0/1
+WPOI5_2tier,binary,WPOI5_2tier,이분형 0/1
+PD_01vs2,binary,PD_01vs2,이분형 0/1
+subsite_2,onehot,subsite,명목 one-hot (drop_first)
+subsite_3,onehot,subsite,명목 one-hot (drop_first)
+subsite_4,onehot,subsite,명목 one-hot (drop_first)
+subsite_5,onehot,subsite,명목 one-hot (drop_first)
+subsite_6,onehot,subsite,명목 one-hot (drop_first)
+subsite_7,onehot,subsite,명목 one-hot (drop_first)
+subsite_8,onehot,subsite,명목 one-hot (drop_first)
+Tx_3tier_1,onehot,Tx,명목 one-hot (drop_first)
+Tx_3tier_2,onehot,Tx,명목 one-hot (drop_first)
+HPV/P16_1,onehot,HPV/P16,명목 one-hot (drop_first)
+HPV/P16_2,onehot,HPV/P16,명목 one-hot (drop_first)
+PFS_event,y_label,PFS,PFS 사건 여부 (0/1)
+PFS_time,y_label,PFS_month,PFS 시간 (수술일 기준 월)
+DSS_event,y_label,DSS,DSS 사건 여부 (0/1)
+DSS_time,y_label,DSS_month,DSS 시간 (수술일 기준 월)
+LRRFS_event,y_label,LRRFS,LRRFS 사건 여부 (0/1)
+LRRFS_time,y_label,LRRFS_month,LRRFS 시간 (수술일 기준 월)
+CCRT_bin,binary,1st OP 후 CCRT 날짜,CCRT 시행 여부 (날짜 존재=1)
+Node_val,x_value,Node,원본 값 ('x'/'?'는 NaN)
+Node_known,x_flag,Node,"값 판독 가능 여부 (1=있음, 0='x'/미기재)"
+bone invasion_val,x_value,bone invasion,원본 값 ('x'/'?'는 NaN)
+bone invasion_known,x_flag,bone invasion,"값 판독 가능 여부 (1=있음, 0='x'/미기재)"
+depth of bone invasion (mm)_val,x_value,depth of bone invasion (mm),원본 값 ('x'/'?'는 NaN)
+depth of bone invasion (mm)_known,x_flag,depth of bone invasion (mm),"값 판독 가능 여부 (1=있음, 0='x'/미기재)"
+LN meta count_val,x_value,LN meta count,원본 값 ('x'/'?'는 NaN)
+LN meta count_known,x_flag,LN meta count,"값 판독 가능 여부 (1=있음, 0='x'/미기재)"
+contra_bilateral_val,x_value,contra_bilateral,원본 값 ('x'/'?'는 NaN)
+contra_bilateral_known,x_flag,contra_bilateral,"값 판독 가능 여부 (1=있음, 0='x'/미기재)"
+largest node (mm)_val,x_value,largest node (mm),원본 값 ('x'/'?'는 NaN)
+largest node (mm)_known,x_flag,largest node (mm),"값 판독 가능 여부 (1=있음, 0='x'/미기재)"
+LN tumor size (mm)_val,x_value,LN tumor size (mm),원본 값 ('x'/'?'는 NaN)
+LN tumor size (mm)_known,x_flag,LN tumor size (mm),"값 판독 가능 여부 (1=있음, 0='x'/미기재)"
+ENE_val,x_value,ENE,원본 값 ('x'/'?'는 NaN)
+ENE_known,x_flag,ENE,"값 판독 가능 여부 (1=있음, 0='x'/미기재)"
+N stage_val,x_value,N stage,원본 값 ('x'/'?'는 NaN)
+N stage_known,x_flag,N stage,"값 판독 가능 여부 (1=있음, 0='x'/미기재)"

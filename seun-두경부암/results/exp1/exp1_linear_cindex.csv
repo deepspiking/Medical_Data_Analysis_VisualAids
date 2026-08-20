@@ -1,0 +1,4 @@
+﻿y,n,linear_Cox_C,note
+PFS,133,0.6914571071874442,TabICL score C-index는 experiment_4에서 비교
+DSS,133,0.8704592186429061,TabICL score C-index는 experiment_4에서 비교
+LRRFS,133,0.6980602944613228,TabICL score C-index는 experiment_4에서 비교

@@ -1,0 +1,49 @@
+﻿model,var,VIF
+B_ajcc8th,age,1.41
+B_ajcc8th,TIL,1.41
+B_ajcc8th,differentiation,1.36
+B_ajcc8th,tumor size (cm),2.53
+B_ajcc8th,DOI (mm),2.61
+B_ajcc8th,성별,1.31
+B_ajcc8th,budding_01vs23,1.41
+B_ajcc8th,PNI,1.56
+B_ajcc8th,LVI,1.55
+B_ajcc8th,RM,1.47
+B_ajcc8th,TSR,1.29
+B_ajcc8th,WPOI5_2tier,1.42
+B_ajcc8th,subsite_2,2.01
+B_ajcc8th,subsite_3,2.21
+B_ajcc8th,subsite_4,1.7
+B_ajcc8th,subsite_5,1.25
+B_ajcc8th,subsite_6,1.85
+B_ajcc8th,subsite_7,2.64
+B_ajcc8th,subsite_8,1.25
+B_ajcc8th,Tx_3tier_1,2.17
+B_ajcc8th,Tx_3tier_2,2.32
+B_ajcc8th,HPV/P16_1,1.33
+B_ajcc8th,HPV/P16_2,1.26
+B_ajcc8th,ajcc8th_STAGE,2.84
+C_modified,age,1.41
+C_modified,TIL,1.47
+C_modified,differentiation,1.44
+C_modified,tumor size (cm),2.46
+C_modified,DOI (mm),2.57
+C_modified,성별,1.39
+C_modified,budding_01vs23,1.41
+C_modified,PNI,1.57
+C_modified,LVI,1.63
+C_modified,RM,1.46
+C_modified,TSR,1.29
+C_modified,WPOI5_2tier,1.41
+C_modified,subsite_2,2.0
+C_modified,subsite_3,2.21
+C_modified,subsite_4,1.78
+C_modified,subsite_5,1.16
+C_modified,subsite_6,1.78
+C_modified,subsite_7,2.58
+C_modified,subsite_8,1.25
+C_modified,Tx_3tier_1,1.98
+C_modified,Tx_3tier_2,2.31
+C_modified,HPV/P16_1,1.35
+C_modified,HPV/P16_2,1.29
+C_modified,mStage,2.48

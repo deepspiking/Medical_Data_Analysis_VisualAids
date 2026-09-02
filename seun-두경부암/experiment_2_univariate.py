@@ -29,6 +29,15 @@ PAIRS = [
     (" mTstage", "T stage",       "mTstage vs T stage"),
     ("mNstage",  "N stage",       "mNstage vs N stage"),
 ]
+# --full(전수 n=133) 모드: NX 4명을 N0로 채운 preprocessed_data_full.csv 사용
+PAIRS_FULL = [
+    ("mStage",   "ajcc8th_STAGE", "mStage vs ajcc8th"),
+    ("mTstage",  "T stage",       "mTstage vs T stage"),
+    ("mNstage",  "N stage_val",   "mNstage vs N stage"),
+]
+FULL = False
+FULL_CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "preprocessed_data_full.csv")
 SEEDS = [42, 123, 2026, 777]
 PRIMARY_SEED = 42
 
@@ -41,6 +50,13 @@ AUC_TIMES = [12, 24, 36, 60]
 
 @lru_cache(maxsize=None)
 def load_data(label):
+    if FULL:
+        d = pd.read_csv(FULL_CSV)
+        keep = ["T stage", "ajcc8th_STAGE", "mTstage", "mNstage", "mStage",
+                "N stage_val", f"{label}_time", f"{label}_event"]
+        d = d[keep].rename(columns={f"{label}_time": "time", f"{label}_event": "event"})
+        d["event"] = d["event"].astype(int)
+        return d
     xl = pd.ExcelFile(DATA_PATH)
     df = xl.parse("Sheet2")
     time_col, event_col = OUTCOME_SRC[label]
@@ -304,36 +320,36 @@ def make_km_plots():
 
 def main():
     import argparse
+    global FULL
     start = time.time()
     ap = argparse.ArgumentParser()
     ap.add_argument("--labels", default="PFS,DSS,OS,LRRFS",
                     help="콤마 구분 y label (기본 전체)")
     ap.add_argument("--seeds", default="42,123,2026,777", help="콤마 구분 시드")
+    ap.add_argument("--full", action="store_true",
+                    help="전수(n=133) 모드: NX 4명을 N0로 채운 full CSV 사용")
     args = ap.parse_args()
+    FULL = args.full
+    pairs = PAIRS_FULL if FULL else PAIRS
     labels = [x for x in args.labels.split(",") if x]
     seeds = [int(x) for x in args.seeds.split(",") if x]
     try:
         multiprocessing.set_start_method("fork", force=True)
     except RuntimeError:
         pass
-    tasks = [(l, p, s) for l in labels for p in PAIRS for s in seeds]
+    tasks = [(l, p, s) for l in labels for p in pairs for s in seeds]
     nproc = min(8, multiprocessing.cpu_count())
-    print(f"실험 2 (S1 univariate) | labels={labels} | {len(tasks)} 콤보 | Pool {nproc}, fork",
-          flush=True)
+    print(f"실험 2 (S1 univariate) | {'full(n=133)' if FULL else 'n=129'} "
+          f"| labels={labels} | {len(tasks)} 콤보 | Pool {nproc}, fork", flush=True)
 
     with multiprocessing.Pool(processes=nproc) as pool:
         rows = pool.map(analyze_combo, tasks)
 
     res = pd.DataFrame(rows)
-    if labels == LABELS:
-        res.to_csv(os.path.join(OUT_DIR, "exp1_univariate.csv"), index=False,
-                   encoding="utf-8-sig")
-    else:
-        res.to_csv(os.path.join(OUT_DIR, "exp1_univariate_partial.csv"), index=False,
-                   encoding="utf-8-sig")
-    print(f"[완료] {time.time()-start:.0f}s — "
-          f"{'results/exp1/exp1_univariate.csv' if labels == LABELS else 'exp1_univariate_partial.csv'}")
-    if labels == LABELS:
+    fname = "exp1_univariate_full.csv" if FULL else "exp1_univariate.csv"
+    res.to_csv(os.path.join(OUT_DIR, fname), index=False, encoding="utf-8-sig")
+    print(f"[완료] {time.time()-start:.0f}s — results/exp1/{fname}")
+    if labels == LABELS and not FULL:
         make_km_plots()
 
 

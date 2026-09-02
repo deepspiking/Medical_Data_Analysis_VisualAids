@@ -84,6 +84,9 @@ def repeated_cv_cindex(dfx, covs, k=5, repeats=10, seed=42):
                 continue
     if not scores:
         return np.nan, np.nan
+    scores = [s for s in scores if not np.isnan(s)]
+    if not scores:
+        return np.nan, np.nan
     return float(np.mean(scores)), float(np.std(scores))
 
 
@@ -217,30 +220,36 @@ def analyze_multivariate(args):
 
 def main():
     import argparse
+    import experiment_utils as eutils
     start = time.time()
     ap = argparse.ArgumentParser()
     ap.add_argument("--labels", default="PFS,DSS,OS,LRRFS",
                     help="콤마 구분 y label (기본 전체)")
     ap.add_argument("--seeds", default="42,123,2026,777", help="콤마 구분 시드")
+    ap.add_argument("--full", action="store_true",
+                    help="전수(n=133) 모드: NX 4명을 N0로 채운 full CSV 사용")
     args = ap.parse_args()
     labels = [x for x in args.labels.split(",") if x]
     seeds = [int(x) for x in args.seeds.split(",") if x]
+    if args.full:
+        eutils.PREP_CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                       "preprocessed_data_full.csv")
     try:
         multiprocessing.set_start_method("fork", force=True)
     except RuntimeError:
         pass
     tasks = [(l, s) for l in labels for s in seeds]
     nproc = min(8, multiprocessing.cpu_count())
-    print(f"실험 3 (S2/S3 multivariate) | labels={labels} | {len(tasks)} 콤보 "
-          f"| Pool {nproc}, fork", flush=True)
+    print(f"실험 3 (S2/S3 multivariate) | {'full(n=133)' if args.full else 'n=129'} "
+          f"| labels={labels} | {len(tasks)} 콤보 | Pool {nproc}, fork", flush=True)
 
     with multiprocessing.Pool(processes=nproc) as pool:
         rows_flat = pool.map(analyze_multivariate, tasks)
 
     rows = [r for chunk in rows_flat for r in chunk]
     res = pd.DataFrame(rows)
-    fname = ("exp1_multivariate.csv" if labels == Y_LABELS
-             else "exp1_multivariate_partial.csv")
+    fname = ("exp1_multivariate_full.csv" if args.full
+             else "exp1_multivariate.csv")
     res.to_csv(os.path.join(OUT_DIR, fname), index=False, encoding="utf-8-sig")
     print(f"[완료] results/exp1/{fname} (총 {time.time()-start:.0f}s)", flush=True)
 

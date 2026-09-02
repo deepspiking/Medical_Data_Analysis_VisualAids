@@ -28,6 +28,10 @@ DATA_CSV = os.path.join(BASE_DIR, "preprocessed_data.csv")
 OUT_DIR = os.path.join(BASE_DIR, "results", "exp1")
 os.makedirs(OUT_DIR, exist_ok=True)
 
+FULL = False
+FULL_CSV = os.path.join(BASE_DIR, "preprocessed_data_full.csv")
+OUT_SUF = ""
+
 SEED = 42
 RMST_T = 36.0
 
@@ -262,6 +266,16 @@ def linear_score_cindex_compare(d, y, covs):
 
 
 def main():
+    import argparse
+    global FULL, DATA_CSV, OUT_SUF
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--full", action="store_true",
+                    help="전수(n=133) 모드: NX 4명을 N0로 채운 full CSV 사용")
+    args = ap.parse_args()
+    if args.full:
+        FULL = True
+        DATA_CSV = FULL_CSV
+        OUT_SUF = "_full"
     d = load_prep()
     rows = []
     rmst_all = []
@@ -281,16 +295,18 @@ def main():
                     rmst_all.append(r)
                 if res["rmst_diff"] is not None:
                     rmst_diff_all.append(res["rmst_diff"])
-                make_scatter(d, score_col, y)
+                if not FULL:
+                    make_scatter(d, score_col, y)
 
     out = pd.DataFrame(rows)
-    out.to_csv(os.path.join(OUT_DIR, "exp1_score_survival.csv"), index=False,
-               encoding="utf-8-sig")
-    pd.DataFrame(rmst_all).to_csv(os.path.join(OUT_DIR, "exp1_rmst.csv"),
+    out.to_csv(os.path.join(OUT_DIR, f"exp1_score_survival{OUT_SUF}.csv"),
+               index=False, encoding="utf-8-sig")
+    pd.DataFrame(rmst_all).to_csv(os.path.join(OUT_DIR, f"exp1_rmst{OUT_SUF}.csv"),
                                   index=False, encoding="utf-8-sig")
     if rmst_diff_all:
-        pd.DataFrame(rmst_diff_all).to_csv(os.path.join(OUT_DIR, "exp1_rmst_diff.csv"),
-                                           index=False, encoding="utf-8-sig")
+        pd.DataFrame(rmst_diff_all).to_csv(
+            os.path.join(OUT_DIR, f"exp1_rmst_diff{OUT_SUF}.csv"),
+            index=False, encoding="utf-8-sig")
 
     # 5f-① 비단조성 진단 (개별 변수 quintile event rate)
     from scipy.stats import spearmanr
@@ -302,8 +318,8 @@ def main():
         diag_rows += nonmonotonicity_diagnostics(d, y, var_cols)
     if diag_rows:
         diag = pd.DataFrame(diag_rows)
-        diag.to_csv(os.path.join(OUT_DIR, "exp1_nonmonotonicity.csv"), index=False,
-                    encoding="utf-8-sig")
+        diag.to_csv(os.path.join(OUT_DIR, f"exp1_nonmonotonicity{OUT_SUF}.csv"),
+                    index=False, encoding="utf-8-sig")
         print("\n=== 5f-① 개별 변수 관계 형태 (quintile event rate) ===")
         print(diag[["y", "var", "classification", "spearman_rho",
                     "spearman_p", "event_rates"]].to_string(index=False))
@@ -319,8 +335,8 @@ def main():
             lin_rows.append(r)
     if lin_rows:
         lin = pd.DataFrame(lin_rows)
-        lin.to_csv(os.path.join(OUT_DIR, "exp1_linear_cindex.csv"), index=False,
-                   encoding="utf-8-sig")
+        lin.to_csv(os.path.join(OUT_DIR, f"exp1_linear_cindex{OUT_SUF}.csv"),
+                   index=False, encoding="utf-8-sig")
         print("\n=== 5f-② 선형 Cox score C-index (TabICL과 비교 기준) ===")
         print(lin.to_string(index=False))
 
@@ -332,8 +348,8 @@ def main():
     if rmst_diff_all:
         print("\n=== RMST 차이 (최고위험 Q_high − 최저위험 Q_low, bootstrap 1,000) ===")
         print(pd.DataFrame(rmst_diff_all).to_string(index=False))
-    print(f"\n저장: {OUT_DIR}/exp1_score_survival.csv, exp1_rmst.csv, "
-          f"exp1_rmst_diff.csv, score_survival_*.png")
+    print(f"\n저장: {OUT_DIR}/exp1_score_survival{OUT_SUF}.csv, exp1_rmst{OUT_SUF}.csv, "
+          f"exp1_rmst_diff{OUT_SUF}.csv, score_survival_*.png")
 
 
 if __name__ == "__main__":

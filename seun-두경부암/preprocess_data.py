@@ -33,7 +33,11 @@ ORDINAL_COLS = ["age", "TIL", "differentiation", "T stage", "ajcc8th_STAGE",
 BINARY_COLS = ["성별", "budding_01vs23", "PNI", "LVI", "RM", "TSR",
                "WPOI5_2tier", "PD_01vs2"]
 NOMINAL_COLS = ["subsite", "Tx_3tier", "HPV/P16"]
-Y_LABELS = ["PFS", "DSS", "LRRFS"]
+Y_LABELS = ["PFS", "DSS", "OS", "LRRFS"]          # OS 추가 (raw: death/Death_month)
+Y_SOURCE = {"PFS": ("PFS", "PFS_month"),
+            "DSS": ("DSS", "DSS_month"),
+            "OS": ("death", "Death_month"),
+            "LRRFS": ("LRRFS", "LRRFS_month")}
 
 
 def _to_numeric_or_nan(s):
@@ -45,10 +49,11 @@ def main():
     xl = pd.ExcelFile(SRC)
     df = xl.parse("Sheet2").copy()
 
-    # ---- Y label 정리 ----
+    # ---- Y label 정리 (PFS/DSS/OS/LRRFS) ----
     for y in Y_LABELS:
-        df[f"{y}_event"] = df[y].astype(int)
-        df[f"{y}_time"] = df[f"{y}_month"].astype(float)
+        src_ev, src_tm = Y_SOURCE[y]
+        df[f"{y}_event"] = df[src_ev].astype(int)
+        df[f"{y}_time"] = df[src_tm].astype(float)
 
     # ---- 'x' 마커 컬럼 → {col}_val + {col}_known ----
     for c in X_COLS:

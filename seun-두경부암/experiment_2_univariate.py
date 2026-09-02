@@ -21,7 +21,9 @@ DATA_PATH = os.path.join(BASE_DIR, "정박사님께 드릴 raw data.xlsx")
 OUT_DIR = os.path.join(BASE_DIR, "results", "exp1")
 os.makedirs(OUT_DIR, exist_ok=True)
 
-LABELS = ["PFS", "DSS", "LRRFS"]
+LABELS = ["PFS", "DSS", "OS", "LRRFS"]
+OUTCOME_SRC = {"PFS": ("PFS_month", "PFS"), "DSS": ("DSS_month", "DSS"),
+               "OS": ("Death_month", "death"), "LRRFS": ("LRRFS_month", "LRRFS")}
 PAIRS = [
     ("mStage",   "ajcc8th_STAGE", "mStage vs ajcc8th"),
     (" mTstage", "T stage",       "mTstage vs T stage"),
@@ -41,10 +43,10 @@ AUC_TIMES = [12, 24, 36, 60]
 def load_data(label):
     xl = pd.ExcelFile(DATA_PATH)
     df = xl.parse("Sheet2")
-    time_col = f"{label}_month"
+    time_col, event_col = OUTCOME_SRC[label]
     keep = ["연구번호", "T stage", "N stage", "ajcc8th_STAGE",
             " mTstage", "mNstage", "mStage", "time", "event"]
-    df = df.rename(columns={time_col: "time", label: "event"})
+    df = df.rename(columns={time_col: "time", event_col: "event"})
     df["event"] = df["event"].astype(int)
     df["time"] = df["time"].astype(float)
     df["N stage"] = pd.to_numeric(df["N stage"], errors="coerce")
@@ -301,23 +303,38 @@ def make_km_plots():
 
 
 def main():
+    import argparse
     start = time.time()
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--labels", default="PFS,DSS,OS,LRRFS",
+                    help="콤마 구분 y label (기본 전체)")
+    ap.add_argument("--seeds", default="42,123,2026,777", help="콤마 구분 시드")
+    args = ap.parse_args()
+    labels = [x for x in args.labels.split(",") if x]
+    seeds = [int(x) for x in args.seeds.split(",") if x]
     try:
         multiprocessing.set_start_method("fork", force=True)
     except RuntimeError:
         pass
-    tasks = [(l, p, s) for l in LABELS for p in PAIRS for s in SEEDS]
+    tasks = [(l, p, s) for l in labels for p in PAIRS for s in seeds]
     nproc = min(8, multiprocessing.cpu_count())
-    print(f"실험 2 (S1 univariate) | {len(tasks)} 콤보 | Pool {nproc}, fork", flush=True)
+    print(f"실험 2 (S1 univariate) | labels={labels} | {len(tasks)} 콤보 | Pool {nproc}, fork",
+          flush=True)
 
     with multiprocessing.Pool(processes=nproc) as pool:
         rows = pool.map(analyze_combo, tasks)
 
     res = pd.DataFrame(rows)
-    res.to_csv(os.path.join(OUT_DIR, "exp1_univariate.csv"), index=False,
-               encoding="utf-8-sig")
-    print(f"[완료] results/exp1/exp1_univariate.csv (총 {time.time()-start:.0f}s)", flush=True)
-    make_km_plots()
+    if labels == LABELS:
+        res.to_csv(os.path.join(OUT_DIR, "exp1_univariate.csv"), index=False,
+                   encoding="utf-8-sig")
+    else:
+        res.to_csv(os.path.join(OUT_DIR, "exp1_univariate_partial.csv"), index=False,
+                   encoding="utf-8-sig")
+    print(f"[완료] {time.time()-start:.0f}s — "
+          f"{'results/exp1/exp1_univariate.csv' if labels == LABELS else 'exp1_univariate_partial.csv'}")
+    if labels == LABELS:
+        make_km_plots()
 
 
 if __name__ == "__main__":

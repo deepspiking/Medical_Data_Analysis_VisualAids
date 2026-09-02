@@ -20,7 +20,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 OUT_DIR = os.path.join(BASE_DIR, "results", "exp1")
 os.makedirs(OUT_DIR, exist_ok=True)
 
-Y_LABELS = ["PFS", "DSS", "LRRFS"]
+Y_LABELS = ["PFS", "DSS", "OS", "LRRFS"]
 SEEDS = [42, 123, 2026, 777]
 PRIMARY_SEED = 42
 N_BOOT = {PRIMARY_SEED: 1_000, 123: 300, 2026: 300, 777: 300}
@@ -216,23 +216,33 @@ def analyze_multivariate(args):
 
 
 def main():
+    import argparse
     start = time.time()
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--labels", default="PFS,DSS,OS,LRRFS",
+                    help="콤마 구분 y label (기본 전체)")
+    ap.add_argument("--seeds", default="42,123,2026,777", help="콤마 구분 시드")
+    args = ap.parse_args()
+    labels = [x for x in args.labels.split(",") if x]
+    seeds = [int(x) for x in args.seeds.split(",") if x]
     try:
         multiprocessing.set_start_method("fork", force=True)
     except RuntimeError:
         pass
-    tasks = [(l, s) for l in Y_LABELS for s in SEEDS]
+    tasks = [(l, s) for l in labels for s in seeds]
     nproc = min(8, multiprocessing.cpu_count())
-    print(f"실험 3 (S2/S3 multivariate) | {len(tasks)} 콤보 | Pool {nproc}, fork", flush=True)
+    print(f"실험 3 (S2/S3 multivariate) | labels={labels} | {len(tasks)} 콤보 "
+          f"| Pool {nproc}, fork", flush=True)
 
     with multiprocessing.Pool(processes=nproc) as pool:
         rows_flat = pool.map(analyze_multivariate, tasks)
 
     rows = [r for chunk in rows_flat for r in chunk]
     res = pd.DataFrame(rows)
-    res.to_csv(os.path.join(OUT_DIR, "exp1_multivariate.csv"), index=False,
-               encoding="utf-8-sig")
-    print(f"[완료] results/exp1/exp1_multivariate.csv (총 {time.time()-start:.0f}s)", flush=True)
+    fname = ("exp1_multivariate.csv" if labels == Y_LABELS
+             else "exp1_multivariate_partial.csv")
+    res.to_csv(os.path.join(OUT_DIR, fname), index=False, encoding="utf-8-sig")
+    print(f"[완료] results/exp1/{fname} (총 {time.time()-start:.0f}s)", flush=True)
 
 
 if __name__ == "__main__":

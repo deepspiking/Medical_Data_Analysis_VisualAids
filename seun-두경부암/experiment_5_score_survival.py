@@ -31,7 +31,7 @@ os.makedirs(OUT_DIR, exist_ok=True)
 SEED = 42
 RMST_T = 36.0
 
-Y_LABELS = ["PFS", "DSS", "LRRFS"]
+Y_LABELS = ["PFS", "DSS", "OS", "LRRFS"]
 PAIRS = [("mStage", "ajcc8th_STAGE", "mStage vs ajcc8th"),
          ("mTstage", "T stage", "mTstage vs T stage"),
          ("mNstage", "N stage_val", "mNstage vs N stage")]
@@ -88,6 +88,46 @@ def rmst_estimate(time, event, t=RMST_T, n_boot=100, seed=SEED):
     return rmst, float(np.percentile(boots, 2.5)), float(np.percentile(boots, 97.5))
 
 
+def rmst_diff_boot(t_hi, e_hi, t_lo, e_lo, t=RMST_T, n_boot=1000, seed=SEED):
+    """두 그룹 RMST 차이(고위험−저위험)의 bootstrap CI와 양측 p (H0: diff=0)."""
+    def rmst_arr(time, event):
+        km = KaplanMeierFitter()
+        km.fit(time, event_observed=event)
+        sf = km.survival_function_
+        idx = sf.index <= t
+        if idx.sum() == 0:
+            return np.nan
+        x = np.concatenate([[0], sf.index[idx]])
+        y = np.concatenate([[1], sf["KM_estimate"].values[idx]])
+        return float(np.trapz(y, x))
+
+    def rmst_pair(i_hi, i_lo):
+        a = rmst_arr(time_hi[i_hi], event_hi[i_hi])
+        b = rmst_arr(time_lo[i_lo], event_lo[i_lo])
+        return a - b
+
+    time_hi, event_hi = np.asarray(t_hi, float), np.asarray(e_hi, bool)
+    time_lo, event_lo = np.asarray(t_lo, float), np.asarray(e_lo, bool)
+    obs = rmst_pair(np.arange(len(time_hi)), np.arange(len(time_lo)))
+    if np.isnan(obs):
+        return obs, np.nan, np.nan, np.nan
+    rng = np.random.RandomState(seed)
+    diffs = []
+    for _ in range(n_boot):
+        i_hi = rng.randint(0, len(time_hi), len(time_hi))
+        i_lo = rng.randint(0, len(time_lo), len(time_lo))
+        v = rmst_pair(i_hi, i_lo)
+        if not np.isnan(v):
+            diffs.append(v)
+    if len(diffs) < 200:
+        return obs, np.nan, np.nan, np.nan
+    lo, hi = np.percentile(diffs, 2.5), np.percentile(diffs, 97.5)
+    diffs = np.array(diffs)
+    p = 2.0 * min(float((diffs <= 0).mean()), float((diffs >= 0).mean()))
+    p = min(p, 1.0)
+    return obs, float(lo), float(hi), float(p)
+
+
 def score_survival_analysis(d, score_col, y):
     """score ↔ 생존: C-index(주) + uncensored Spearman(보조) + RMST 4분위."""
     y_time, y_event = f"{y}_time", f"{y}_event"
@@ -120,10 +160,22 @@ def score_survival_analysis(d, score_col, y):
             rmst_rows.append({"score_col": score_col, "y": y, "quartile": int(qi),
                               "n": int(m.sum()), "RMST": r, "RMST_lo": lo, "RMST_hi": hi})
 
+    rmst_diff = None
+    if q is not None:
+        qmin, qmax = int(pd.unique(q).min()), int(pd.unique(q).max())
+        m_hi, m_lo = q == qmax, q == qmin
+        if m_hi.sum() >= 3 and m_lo.sum() >= 3:
+            diff, dlo, dhi, dp = rmst_diff_boot(t[m_hi], e[m_hi], t[m_lo], e[m_lo])
+            rmst_diff = {"score_col": score_col, "y": y,
+                         "Q_high": qmax, "Q_low": qmin,
+                         "n_high": int(m_hi.sum()), "n_low": int(m_lo.sum()),
+                         "RMST_diff": diff, "RMST_diff_lo": dlo, "RMST_diff_hi": dhi,
+                         "RMST_diff_p": dp}
+
     return {"score_col": score_col, "y": y, "n": len(dfx),
             "C_index": c_idx,
             "unc_n": int(unc.sum()), "spearman_rho": rho, "spearman_p": p_rho,
-            "rmst_q": rmst_rows}
+            "rmst_q": rmst_rows, "rmst_diff": rmst_diff}
 
 
 def make_scatter(d, score_col, y):
@@ -213,6 +265,7 @@ def main():
     d = load_prep()
     rows = []
     rmst_all = []
+    rmst_diff_all = []
     for y in Y_LABELS:
         for new_c, old_c, pair_name in PAIRS:
             for tag, score_col in [("modified", new_c), ("conventional", old_c)]:
@@ -226,6 +279,8 @@ def main():
                              "spearman_p": res["spearman_p"]})
                 for r in res["rmst_q"]:
                     rmst_all.append(r)
+                if res["rmst_diff"] is not None:
+                    rmst_diff_all.append(res["rmst_diff"])
                 make_scatter(d, score_col, y)
 
     out = pd.DataFrame(rows)
@@ -233,6 +288,9 @@ def main():
                encoding="utf-8-sig")
     pd.DataFrame(rmst_all).to_csv(os.path.join(OUT_DIR, "exp1_rmst.csv"),
                                   index=False, encoding="utf-8-sig")
+    if rmst_diff_all:
+        pd.DataFrame(rmst_diff_all).to_csv(os.path.join(OUT_DIR, "exp1_rmst_diff.csv"),
+                                           index=False, encoding="utf-8-sig")
 
     # 5f-① 비단조성 진단 (개별 변수 quintile event rate)
     from scipy.stats import spearmanr
@@ -271,7 +329,11 @@ def main():
     print("\n=== RMST(t=36) by score quartile ===")
     if rmst_all:
         print(pd.DataFrame(rmst_all).to_string(index=False))
-    print(f"\n저장: {OUT_DIR}/exp1_score_survival.csv, exp1_rmst.csv, score_survival_*.png")
+    if rmst_diff_all:
+        print("\n=== RMST 차이 (최고위험 Q_high − 최저위험 Q_low, bootstrap 1,000) ===")
+        print(pd.DataFrame(rmst_diff_all).to_string(index=False))
+    print(f"\n저장: {OUT_DIR}/exp1_score_survival.csv, exp1_rmst.csv, "
+          f"exp1_rmst_diff.csv, score_survival_*.png")
 
 
 if __name__ == "__main__":

@@ -1,8 +1,26 @@
 # 구강암 수정병기 검증 — AI 엔지니어 온보딩 리포트
 
-> 작성일: 2026-08-18
+> 작성일: 2026-08-18 / **갱신: 2026-09-02 (v2 — 의사 피드백 반영)**
 > 대상: 의료 연구 맥락을 모르는 AI 엔지니어 (이제 같이 시작하는 동료)
 > 목적: **무엇을 했고, 왜 했고, 데이터가 뭔지, 지표를 어떻게 읽는지** 처음부터 설명
+
+## 0. v2 갱신 요약 (2026-09-02)
+
+의사(정세운) 피드백으로 아래를 변경·추가했다. 상세는 의사용 리포트와
+`정세운선생님_피드백_답변_20260902.md` 참조.
+
+1. **'x' 처리 관례 확정**: largest node/LN tumor size/ENE의 'x'를 0(absence)으로 처리.
+   → 실험 1의 docx 재현 일치율이 **유의성 기준 22/30 → 29/30**, 방향 30/30(100%)으로 개선.
+   (원인: 종전 코드가 'x'를 결측 처리 + 모든 univariate를 한 모델로 fit해 N+ 58명만
+   추정하던 버그 — v2에서 "진짜 단변량 + 변수별 complete-case"로 수정)
+2. **OS(전체생존, death 44명)를 4번째 endpoint로 추가**: 실험 2·3·5 전부 재실행.
+   → 수정병기가 OS에서도 기존병기보다 우월(방향 일관, S3 ΔNRI +0.229).
+3. **DM(원격전이, 9명)**: 사건 수 부족으로 정식 생존분석 부적합 → descriptive로 보고.
+4. **RMST 추론**: 위험군 간 ΔRMST + 95% CI + **p값** 추가 (bootstrap 1,000회).
+5. **mNstage 재산출 검증**: Sheet1 규칙 vs 원본 컬럼 대조 결과(NX 4명, N+ 12명 불일치)를
+   의사 확정용 증거로 생성 (`stage_recompute_validation.py`,
+   `results/exp1/validation/stage_recompute_check.csv`).
+6. 재현: `experiment_1_docx_reproduction.py --mode x0/xnan/both` (기본 x0).
 
 ---
 
@@ -68,13 +86,18 @@
 
 ### 2.2 주요 컬럼 (변수)
 
-**Y label (결과 변수, 예측 대상)** — 생존 관련 3종:
+**Y label (결과 변수, 예측 대상)** — 생존 관련 4종 (v2에서 OS 추가):
 
 | 변수 | 의미 | 사건 수 |
 |---|---|---|
 | **PFS** (Progression-Free Survival) | 무진행 생존 — 재발/사망까지 | 61명 (45.9%) |
 | **DSS** (Disease-Specific Survival) | 질병특이 생존 — 암으로 인한 사망까지 | 28명 (21.1%) |
+| **OS** (Overall Survival, v2 추가) | 전체 생존 — 모든 원인 사망까지 | 44명 (33.1%) |
 | **LRRFS** (Locoregional Recurrence-Free Survival) | 국소·지역 재발 없는 생존 | 44명 (33.1%) |
+
+> DM(원격전이)은 사건 9명(6.8%)으로 정식 생존분석 부적합 → descriptive 보고로 한정.
+> OS는 raw의 `death`/`Death_month`로 생성해 실험 1에서는 원래 포함돼 있었고,
+> v2에서 실험 2·3·5에도 추가했다.
 
 **병기 변수**:
 - 기존: `T stage`(1-5), `N stage`(0-6, x), `ajcc8th_STAGE`(1-5)
@@ -132,7 +155,8 @@ WPOI5, HPV/P16, CCRT(방사선치료 여부) 등
 ### 3.6 RMST (Restricted Mean Survival Time) — "평균 생존 개월 수"
 
 - t\*=36개월까지의 평균 생존 기간 (KM 곡선 적분)
-- 예: 수정병기 위험군 RMST 9.1 vs 저위험군 30.2 → **위험군이 평균 21개월 짧게 삶**
+- 예: 수정병기(mStage) PFS — 저위험군(I–II) RMST 29.6 vs 고위험군(III–IV) 15.4 →
+  **ΔRMST −12.4개월 [−16.6, −7.6], p<0.001** (bootstrap 1,000회)
 
 ### 3.7 Bootstrap (부트스트랩) — "재표본추출로 불확실성 측정"
 
@@ -190,21 +214,24 @@ WPOI5, HPV/P16, CCRT(방사선치료 여부) 등
 
 ## 5. 결과 요약 (기술적 관점)
 
-### 5.1 실험 1 — 기존 분석 재현 ✅
+### 5.1 실험 1 — 기존 분석 재현 ✅ (v2: 'x'→0)
 
-- multivariate 방향 일치 **100%** (9/9), 전체 방향 93%
-- **PD-HC의 예후 효과(HR≈14)가 재현** — 기존 분석의 핵심 발견 확인
-- 잔여 불일치는 'x' 처리 관례 차이 (분석 오류 아님)
+- docx 참조값 30행 기준 **방향 일치 100% (30/30), 유의성 일치 97% (29/30)**
+- multivariate 방향 일치 **100%** (9/9)
+- **PD-HC의 예후 효과가 재현** (DSS 단변량 HR≈8.2, OS HR≈5.5 — bootstrap CI도 1 미포함)
+- 종전 28/30(방향)·22/30(유의)이던 이유: ① 'x'를 결측 처리해 N0 75명이 ENE/LN size
+  분석에서 누락 ② univariate가 실제로는 10변수 동시 모델이던 코드 버그 → v2에서
+  'x'→0 + 진짜 단변량으로 수정. 유일 잔여 불일치 = DSS multivariate LVI(모델 구성 차이)
 
 ![실험1: 기존 분석 vs bootstrap 재현](results/exp1/실험1_rawdata_vs_bootstrap_forest.png)
 *파란 원=기존 분석 HR, 사각형=bootstrap 재현 HR — 초록=일치, 주황=방향만 일치, 빨강=불일치*
 
 ### 5.2 실험 2 — 병기 단독 구분 ✅
 
-| 비교 | PFS | DSS | LRRFS |
-|---|---|---|---|
-| mStage vs ajcc8th | **0.696** vs 0.635 | **0.808** vs 0.756 | **0.673** vs 0.594 |
-| mTstage vs T | **0.697** vs 0.620 | **0.829** vs 0.724 | **0.669** vs 0.587 |
+| 비교 | PFS | DSS | **OS** | LRRFS |
+|---|---|---|---|---|
+| mStage vs ajcc8th | **0.696** vs 0.635 | **0.808** vs 0.756 | **0.768** vs 0.735 | **0.673** vs 0.594 |
+| mTstage vs T | **0.697** vs 0.620 | **0.829** vs 0.724 | **0.777** vs 0.708 | **0.669** vs 0.587 |
 
 - **mTstage가 DSS에서 ΔC +0.105로 가장 큰 유의 개선**
 - mNstage는 기존 N과 차이 없음
@@ -218,8 +245,8 @@ WPOI5, HPV/P16, CCRT(방사선치료 여부) 등
 ### 5.3 실험 3 — Multivariate (주 판정) ✅
 
 - **S2 (대체)**: 수정병기 모델이 모든 y에서 CV C-index 우월 (ΔCV>0), NRI 모두 큰 양수
-- **S3 (증분)**: **ΔNRI > 0 전 y** (PFS +0.59, DSS +0.33, LRRFS +0.52) — 수정병기 증분이
-  기존병기보다 큼 → **"추가 정보 가치" 입증**
+- **S3 (증분)**: **ΔNRI > 0 전 y** (PFS +0.59, DSS +0.33, **OS +0.23**, LRRFS +0.52) —
+  수정병기 증분이 기존병기보다 큼 → **"추가 정보 가치" 입증 (OS 포함 4개 endpoint)**
 
 ![S3 증분 비교 (핵심 증거)](results/exp1/실험3_S3_increment.png)
 *수정병기 증분(빨강)이 기존병기 증분(파랑)보다 큼 — 3개 y 모두*
@@ -245,7 +272,7 @@ WPOI5, HPV/P16, CCRT(방사선치료 여부) 등
 
 - 수정병기 C-index가 기존병기 및 회귀 예측보다 **모두 우월**
   (DSS: 수정 0.808 vs 기존 0.752 vs 회귀 0.697)
-- 수정병기 위험군 RMST 21개월 단축
+- 수정병기 고위험군 ΔRMST −10~−19개월 (4개 y 모두 p<0.001, v2)
 - 수정병기 단조성 유지 vs 기존 ajcc8th 비단조
 
 ![score vs 생존 산점도 (DSS, mStage)](results/exp1/score_survival_DSS_mStage.png)
@@ -311,8 +338,8 @@ seun-두경부암/
 ```
 
 `preprocessed_data.csv`의 컬럼 구성:
-- **Y label**: `PFS_event/PFS_time`, `DSS_event/DSS_time`, `LRRFS_event/LRRFS_time`
-  (event=사건 여부 0/1, time=수술일 기준 개월 수)
+- **Y label**: `PFS_event/PFS_time`, `DSS_event/DSS_time`, `OS_event/OS_time`(v2 추가),
+  `LRRFS_event/LRRFS_time` (event=사건 여부 0/1, time=수술일 기준 개월 수)
 - **병기**: `T stage`, `N stage`, `ajcc8th_STAGE`, `mTstage`, `mNstage`, `mStage`
 - **임상/병리**: `age`, `성별`, `tumor size (cm)`, `DOI (mm)`, `PNI`, `LVI`, `RM`, `TIL`, `TSR`, `WPOI5_2tier`, `budding_01vs23`, `differentiation`, `HPV/P16_1`, `HPV/P16_2`, `CCRT_bin`
 - **'x' 플래그**: `{col}_val`(값) + `{col}_known`(값 존재 여부 0/1) — 예: `ENE_val`, `ENE_known`

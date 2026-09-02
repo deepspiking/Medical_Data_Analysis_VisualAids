@@ -12,6 +12,14 @@ docx Table 1: PFS/DSS/OS/LRRFS 각각 univariate + multivariate Cox
     LRRFS : LN tumor size
 검증: 재현 HR/CI/p vs docx 값 방향·유의성 일치 + bootstrap 1,000회 안정성
 
+v2 (2026-09-02, 정세운 선생님 피드백 반영):
+  1) 'x' 처리 관례 옵션화: x0 = 'x'→0 (absence, 선생님 SPSS 관례) / xnan = 'x'→NaN
+     기본값 x0.  CLI: --mode {x0,xnan,both}
+  2) BUG FIX — univariate는 변수 1개만 사용하는 진짜 단변량으로 수정
+     (기존: UNI_VARS 10개를 한 모델에 넣고 각 계수를 "univariate"로 보고 + 전체 변수
+      기준 complete-case로 n=58(N+만) 축소 → docx 단변량과 비교 불가했음)
+  3) dropna는 모델에 포함된 변수 기준으로만 수행 (변수별 결측만 제외)
+
 docx 참조값 (Table 1에서 추출):
   PFS  uni: size 1.296(1.123-1.495) / DOI 1.054(1.029-1.080) / #LN 1.061(1.028-1.095)
             / dep 1.047(1.011-1.084) / ENE 2.332(1.328-4.094) / PD-HC 3.867(2.284-6.546)
@@ -28,6 +36,8 @@ docx 참조값 (Table 1에서 추출):
   LRRFS multi: dep 1.073(1.014-1.135)
 """
 import os
+import sys
+import argparse
 import numpy as np
 import pandas as pd
 from lifelines import CoxPHFitter
@@ -94,7 +104,7 @@ Y_OUTCOMES = {  # outcome → (time_col, event_col)
 }
 
 
-def load_outcome(outcome):
+def load_outcome(outcome, mode="x0"):
     xl = pd.ExcelFile(DATA_PATH)
     df = xl.parse("Sheet2")
     time_col, event_col = Y_OUTCOMES[outcome]
@@ -104,13 +114,19 @@ def load_outcome(outcome):
     d["event"] = d["event"].astype(int)
     d["time"] = pd.to_numeric(d["time"], errors="coerce").astype(float)
     for v in VAR_MAP.values():
-        d[v] = pd.to_numeric(d[v].astype(str).str.replace("x", "nan", regex=False),
-                             errors="coerce")
+        s = d[v].astype(str).str.strip().str.replace("?", "nan", regex=False)
+        # 'x' 처리: x0(의사 SPSS 관례: absence=0) / xnan(결측)
+        if mode == "x0":
+            s = s.replace("x", "0")
+        else:
+            s = s.replace("x", "nan")
+        d[v] = pd.to_numeric(s, errors="coerce")
     d = d.dropna(subset=["time"]).reset_index(drop=True)
     return d
 
 
 def fit_cox(d, vars_list):
+    """Cox fit — 모델에 포함된 변수 기준으로만 complete-case (변수별 결측 제외)."""
     dfx = d[["time", "event"] + [VAR_MAP[v] for v in vars_list]].dropna()
     cph = CoxPHFitter(penalizer=0.0)
     cph.fit(dfx, duration_col="time", event_col="event")
@@ -121,7 +137,8 @@ def fit_cox(d, vars_list):
         out[v] = (float(np.exp(cph.params_[col])),
                   float(np.exp(ci["95% lower-bound"])),
                   float(np.exp(ci["95% upper-bound"])),
-                  float(cph.summary.loc[col, "p"]))
+                  float(cph.summary.loc[col, "p"]),
+                  len(dfx))
     return out
 
 
@@ -171,73 +188,83 @@ def _init_parallel():
 
 def main():
     import time
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--mode", choices=["x0", "xnan", "both"], default="x0",
+                    help="'x' 처리 관례: x0=0(absence, 기본), xnan=결측")
+    args = ap.parse_args()
+    modes = ["x0", "xnan"] if args.mode == "both" else [args.mode]
+
     _init_parallel()
-    t0 = time.time()
-    out_rows = []
-    boot_rows = []
-    for outcome, (time_col, event_col) in Y_OUTCOMES.items():
-        print(f"[실험 1] {outcome} 시작...", flush=True)
-        d = load_outcome(outcome)
-        uni = fit_cox(d, UNI_VARS)
-        for v, (hr, lo, hi, p) in uni.items():
-            ref = DOCX_UNI.get(outcome, {}).get(v)
-            out_rows.append({"outcome": outcome, "type": "univariate", "var": v,
-                             "HR": hr, "lo": lo, "hi": hi, "p": p,
-                             "docx_HR": ref[0] if ref else np.nan,
-                             "docx_lo": ref[1] if ref else np.nan,
-                             "docx_hi": ref[2] if ref else np.nan})
-        multi_vars = MULTI_MODELS[outcome]
-        multi = fit_cox(d, multi_vars)
-        for v, (hr, lo, hi, p) in multi.items():
-            ref = DOCX_MULTI.get(outcome, {}).get(v)
-            out_rows.append({"outcome": outcome, "type": "multivariate", "var": v,
-                             "HR": hr, "lo": lo, "hi": hi, "p": p,
-                             "docx_HR": ref[0] if ref else np.nan,
-                             "docx_lo": ref[1] if ref else np.nan,
-                             "docx_hi": ref[2] if ref else np.nan})
-        br = bootstrap_hr(d, multi_vars)
-        br.insert(0, "outcome", outcome)
-        br.insert(1, "type", "multivariate")
-        boot_rows.append(br)
-        print(f"[실험 1] {outcome} 완료 ({time.time()-t0:.0f}s)", flush=True)
+    for mode in modes:
+        t0 = time.time()
+        out_rows = []
+        boot_rows = []
+        print(f"\n########## 실험 1 실행: mode={mode} ('x' -> "
+              f"{'0' if mode == 'x0' else 'NaN'}) ##########", flush=True)
+        for outcome, (time_col, event_col) in Y_OUTCOMES.items():
+            print(f"[실험 1] {outcome} 시작...", flush=True)
+            d = load_outcome(outcome, mode=mode)
+            uni = {}
+            for v in UNI_VARS:                       # 진짜 단변량 (변수 1개씩)
+                uni[v] = fit_cox(d, [v])[v]
+            for v, (hr, lo, hi, p, n) in uni.items():
+                ref = DOCX_UNI.get(outcome, {}).get(v)
+                out_rows.append({"outcome": outcome, "type": "univariate", "var": v,
+                                 "HR": hr, "lo": lo, "hi": hi, "p": p, "n": n,
+                                 "docx_HR": ref[0] if ref else np.nan,
+                                 "docx_lo": ref[1] if ref else np.nan,
+                                 "docx_hi": ref[2] if ref else np.nan})
+            multi_vars = MULTI_MODELS[outcome]
+            multi = fit_cox(d, multi_vars)
+            for v, (hr, lo, hi, p, n) in multi.items():
+                ref = DOCX_MULTI.get(outcome, {}).get(v)
+                out_rows.append({"outcome": outcome, "type": "multivariate", "var": v,
+                                 "HR": hr, "lo": lo, "hi": hi, "p": p, "n": n,
+                                 "docx_HR": ref[0] if ref else np.nan,
+                                 "docx_lo": ref[1] if ref else np.nan,
+                                 "docx_hi": ref[2] if ref else np.nan})
+            br = bootstrap_hr(d, multi_vars)
+            br.insert(0, "outcome", outcome)
+            br.insert(1, "type", "multivariate")
+            boot_rows.append(br)
+            print(f"[실험 1] {outcome} 완료 ({time.time()-t0:.0f}s)", flush=True)
 
-    res = pd.DataFrame(out_rows)
-    res["direction_match"] = np.sign(res["HR"] - 1) == np.sign(res["docx_HR"] - 1)
-    res["sig_match"] = (res["p"] < 0.05) == \
-        ((res["docx_lo"] > 1) | (res["docx_hi"] < 1))
-    # 비교 가능한 행만: docx 참조값 존재 + 재현 HR 존재
-    cmp = res[res["docx_HR"].notna() & res["HR"].notna()].copy()
-    cmp["direction_match"] = np.sign(cmp["HR"] - 1) == np.sign(cmp["docx_HR"] - 1)
-    cmp["sig_match"] = (cmp["p"] < 0.05) == \
-        ((cmp["docx_lo"] > 1) | (cmp["docx_hi"] < 1))
-    res.to_csv(os.path.join(OUT_DIR, "exp1_docx_reproduction.csv"), index=False,
-               encoding="utf-8-sig")
+        res = pd.DataFrame(out_rows)
+        res["direction_match"] = np.sign(res["HR"] - 1) == np.sign(res["docx_HR"] - 1)
+        res["sig_match"] = (res["p"] < 0.05) == \
+            ((res["docx_lo"] > 1) | (res["docx_hi"] < 1))
+        cmp = res[res["docx_HR"].notna() & res["HR"].notna()].copy()
+        cmp["direction_match"] = np.sign(cmp["HR"] - 1) == np.sign(cmp["docx_HR"] - 1)
+        cmp["sig_match"] = (cmp["p"] < 0.05) == \
+            ((cmp["docx_lo"] > 1) | (cmp["docx_hi"] < 1))
 
-    boot = pd.concat(boot_rows, ignore_index=True)
-    boot.to_csv(os.path.join(OUT_DIR, "exp1_docx_bootstrap.csv"), index=False,
-                encoding="utf-8-sig")
+        suff = "" if mode == "x0" else f"_{mode}"     # 기본(x0)은 기존 파일명 유지
+        res.to_csv(os.path.join(OUT_DIR, f"exp1_docx_reproduction{suff}.csv"),
+                   index=False, encoding="utf-8-sig")
+        boot = pd.concat(boot_rows, ignore_index=True)
+        boot.to_csv(os.path.join(OUT_DIR, f"exp1_docx_bootstrap{suff}.csv"),
+                    index=False, encoding="utf-8-sig")
 
-    print("=== 재현 vs docx (univariate, 참조값 있는 경우만) ===")
-    u = cmp[cmp["type"] == "univariate"]
-    for _, r in u.iterrows():
-        dm = "O" if r["direction_match"] else "X"
-        sm = "O" if r["sig_match"] else "X"
-        print(f"{r['outcome']:6s} {r['var']:12s} 재현 {r['HR']:6.3f} ({r['lo']:.2f}-{r['hi']:.2f}) "
-              f"| docx {r['docx_HR']:6.3f} | 방향{dm} 유의{sm}")
-    print("\n=== multivariate (docx 최종 모델, 참조값 있는 경우만) ===")
-    m = cmp[cmp["type"] == "multivariate"]
-    for _, r in m.iterrows():
-        dm = "O" if r["direction_match"] else "X"
-        sm = "O" if r["sig_match"] else "X"
-        print(f"{r['outcome']:6s} {r['var']:12s} 재현 {r['HR']:7.3f} ({r['lo']:.2f}-{r['hi']:.2f}) "
-              f"| docx {r['docx_HR']:7.3f} | 방향{dm} 유의{sm}")
-    print(f"\n방향 일치율 (참조값 있는 {len(cmp)}개): "
-          f"{(cmp['direction_match'].sum()/len(cmp))*100:.0f}% "
-          f"({cmp['direction_match'].sum()}/{len(cmp)})")
-    print(f"유의성 일치율 (참조값 있는 {len(cmp)}개): "
-          f"{(cmp['sig_match'].sum()/len(cmp))*100:.0f}% "
-          f"({cmp['sig_match'].sum()}/{len(cmp)})")
-    print(f"\n저장: {OUT_DIR}/exp1_docx_reproduction.csv, exp1_docx_bootstrap.csv")
+        print("\n=== 재현 vs docx (univariate, 참조값 있는 경우만) ===")
+        u = cmp[cmp["type"] == "univariate"]
+        for _, r in u.iterrows():
+            dm = "O" if r["direction_match"] else "X"
+            sm = "O" if r["sig_match"] else "X"
+            print(f"{r['outcome']:6s} {r['var']:12s} 재현 {r['HR']:6.3f} ({r['lo']:.2f}-{r['hi']:.2f}) "
+                  f"| docx {r['docx_HR']:6.3f} | 방향{dm} 유의{sm}")
+        print("\n=== multivariate (docx 최종 모델, 참조값 있는 경우만) ===")
+        m = cmp[cmp["type"] == "multivariate"]
+        for _, r in m.iterrows():
+            dm = "O" if r["direction_match"] else "X"
+            sm = "O" if r["sig_match"] else "X"
+            print(f"{r['outcome']:6s} {r['var']:12s} 재현 {r['HR']:7.3f} ({r['lo']:.2f}-{r['hi']:.2f}) "
+                  f"| docx {r['docx_HR']:7.3f} | 방향{dm} 유의{sm}")
+        print(f"\n[{mode}] 방향 일치율 (참조값 있는 {len(cmp)}개): "
+              f"{(cmp['direction_match'].sum()/len(cmp))*100:.0f}% "
+              f"({cmp['direction_match'].sum()}/{len(cmp)})")
+        print(f"[{mode}] 유의성 일치율 (참조값 있는 {len(cmp)}개): "
+              f"{(cmp['sig_match'].sum()/len(cmp))*100:.0f}% "
+              f"({cmp['sig_match'].sum()}/{len(cmp)})")
 
 
 if __name__ == "__main__":

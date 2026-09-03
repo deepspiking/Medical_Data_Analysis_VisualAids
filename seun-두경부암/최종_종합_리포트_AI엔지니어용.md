@@ -21,6 +21,9 @@
    의사 확정용 증거로 생성 (`stage_recompute_validation.py`,
    `results/exp1/validation/stage_recompute_check.csv`).
 6. 재현: `experiment_1_docx_reproduction.py --mode x0/xnan/both` (기본 x0).
+7. **v3 (확정판)**: D1 채택 — NX 4명을 N0로 간주해 **전수 n=133 분석이 공식 결과**.
+   `preprocessed_data_full.csv` + 실험 `--full` 옵션 + `results/exp1/*_full.csv`.
+   n=129 대비 결론 불변 (수치 변동 ≤0.02). 상세: `최종_종합_리포트_정세운선생님용.md`(v3).
 
 ---
 

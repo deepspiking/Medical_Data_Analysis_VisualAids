@@ -1,0 +1,7 @@
+﻿scheme,k,C_PFS,p_lr_PFS,mono_PFS,C_DSS,p_lr_DSS,mono_DSS,C_OS,p_lr_OS,mono_OS,C_LRRFS,p_lr_LRRFS,mono_LRRFS,C_mean,mono_all,dC_PFS,dC_PFS_lo,dC_PFS_hi,dC_PFS_excl0,dC_DSS,dC_DSS_lo,dC_DSS_hi,dC_DSS_excl0,dC_OS,dC_OS_lo,dC_OS_hi,dC_OS_excl0,dC_LRRFS,dC_LRRFS_lo,dC_LRRFS_hi,dC_LRRFS_excl0
+count-only 4군 (0/1/2/3+),4,0.649,0.0,False,0.738,0.0,True,0.707,0.0,True,0.629,4e-05,False,0.6808,False,0.008,-0.006,0.024,False,0.002,-0.026,0.03,False,0.001,-0.02,0.021,False,0.013,-0.006,0.034,False
+count-tier 4군 (0/1/2-3/4+),4,0.647,5e-05,True,0.74,0.0,True,0.707,0.0,True,0.627,0.00106,False,0.6802,False,0.006,-0.008,0.02,False,0.004,-0.022,0.03,False,0.001,-0.02,0.019,False,0.011,-0.007,0.03,False
+N-dep 4군 (제안),4,0.644,3e-05,True,0.735,0.0,False,0.699,0.0,False,0.628,0.0002,False,0.6765,False,0.003,-0.014,0.018,False,-0.001,-0.025,0.021,False,-0.007,-0.028,0.011,False,0.012,-0.004,0.029,False
+"mN (선생님 기존, 4군)",4,0.644,3e-05,True,0.733,0.0,False,0.7,0.0,False,0.626,0.00038,False,0.6758,False,0.003,-0.012,0.017,False,-0.002,-0.026,0.02,False,-0.006,-0.026,0.011,False,0.01,-0.005,0.026,False
+"AJCC N (기존, 6군)",6,0.641,0.00024,False,0.736,0.0,False,0.706,0.0,False,0.616,0.01438,False,0.6748,False,,,,,,,,,,,,,,,,
+N-dep 5군 (변형),5,0.639,0.0,False,0.731,0.0,False,0.697,0.0,False,0.62,0.0,False,0.6718,False,-0.002,-0.019,0.012,False,-0.005,-0.028,0.016,False,-0.009,-0.029,0.009,False,0.004,-0.012,0.02,False

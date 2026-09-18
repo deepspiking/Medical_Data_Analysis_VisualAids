@@ -32,15 +32,16 @@ def hstack(paths, labels, out, bg="white"):
     print("[save]", os.path.basename(out), canvas.size)
 
 
-for y in ["OS", "PFS", "DSS", "LRRFS"]:
-    hstack([os.path.join(SRC, f"calibration_{y}_3yr.png"),
-            os.path.join(SRC, f"calibration_{y}_5yr.png")],
-           ["A. 3-year calibration", "B. 5-year calibration"],
-           os.path.join(OUT, f"panel_{y}_calibration.png"))
-    hstack([os.path.join(SRC, f"dca_{y}_3yr.png"),
-            os.path.join(SRC, f"roc_{y}.png"),
-            os.path.join(SRC, f"risk_km_{y}.png")],
-           [f"A. Decision curve (3-year)", "B. Time-dependent ROC",
-            "C. Risk-group KM"],
-           os.path.join(OUT, f"panel_{y}_decision.png"))
+for sfx in ["", "_stage"]:
+    for y in ["OS", "PFS", "DSS", "LRRFS"]:
+        hstack([os.path.join(SRC, f"calibration_{y}_3yr{sfx}.png"),
+                os.path.join(SRC, f"calibration_{y}_5yr{sfx}.png")],
+               ["A. 3-year calibration", "B. 5-year calibration"],
+               os.path.join(OUT, f"panel_{y}{sfx}_calibration.png"))
+        hstack([os.path.join(SRC, f"dca_{y}_3yr{sfx}.png"),
+                os.path.join(SRC, f"roc_{y}{sfx}.png"),
+                os.path.join(SRC, f"risk_km_{y}{sfx}.png")],
+               ["A. Decision curve (3-year)", "B. Time-dependent ROC",
+                "C. Risk-group KM"],
+               os.path.join(OUT, f"panel_{y}{sfx}_decision.png"))
 print("[출력]", OUT)

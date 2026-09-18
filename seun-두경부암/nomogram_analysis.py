@@ -44,14 +44,22 @@ YMAP = {"OS": ("OS_time", "OS_event"), "PFS": ("PFS_time", "PFS_event"),
 # 후보 예후인자 (병기 구성요소와 중복되는 원시 T/N 변수는 제외, 수정병기 축은 포함)
 CANDIDATES = ["age", "male", "tumor size (cm)", "DOI (mm)", "differentiation",
               "budding_01vs23", "PNI", "LVI", "RM", "TIL", "TSR",
-              "WPOI5_2tier", "HPV/P16_2", "CCRT_bin", "mTstage", "mNstage"]
-FORCE_IN = ["mTstage", "mNstage"]   # 연구 핵심(수정병기 축) — 반드시 유지
+              "WPOI5_2tier", "HPV/P16_2", "CCRT_bin", "mTstage", "mNstage",
+              "PD_01vs2", "bone invasion_val", "LN meta count_val",
+              "LN tumor size (mm)_val", "ENE_val", "contra_bilateral_val"]
+FORCE_IN = ["mTstage", "mNstage"]
+COMPONENTS = ["tumor size (cm)", "DOI (mm)", "PD_01vs2", "bone invasion_val",
+              "LN meta count_val", "LN tumor size (mm)_val", "ENE_val",
+              "contra_bilateral_val"]
 LABELS = {
     "age": "Age (years)", "male": "Sex (male)", "tumor size (cm)": "Tumor size (cm)",
     "DOI (mm)": "DOI (mm)", "differentiation": "Differentiation", "budding_01vs23": "Budding",
     "PNI": "PNI", "LVI": "LVI", "RM": "Resection margin", "TIL": "TIL", "TSR": "TSR",
     "WPOI5_2tier": "WPOI5", "HPV/P16_2": "HPV/P16 (+)", "CCRT_bin": "CCRT",
     "mTstage": "Modified T stage", "mNstage": "Modified N stage",
+    "PD_01vs2": "PD cellularity", "bone invasion_val": "Bone invasion",
+    "LN meta count_val": "LN count", "LN tumor size (mm)_val": "LN deposit (mm)",
+    "ENE_val": "ENE", "contra_bilateral_val": "Bilateral/contralat.",
 }
 
 
@@ -59,6 +67,10 @@ def load():
     d = pd.read_csv(DATA)
     d = d.copy()
     d["male"] = (pd.to_numeric(d["성별"], errors="coerce") == 1).astype(int)
+    for c in ["PD_01vs2", "bone invasion_val", "LN meta count_val",
+              "LN tumor size (mm)_val", "ENE_val", "contra_bilateral_val"]:
+        if c in d.columns:
+            d[c] = pd.to_numeric(d[c], errors="coerce").fillna(0)
     return d
 
 
@@ -246,6 +258,8 @@ def draw_nomogram(cph, df, feats, times, endpoint, fname, cindex_txt):
             ticks = nice_ticks(float(min(vals)), float(max(vals)))
         else:
             ticks = vals
+        if mp < 12 and len(ticks) > 2:
+            ticks = [vals[0], vals[-1]]
         for v in ticks:
             p = nc["points_of"](f, v)
             ax.plot([top_x(p), top_x(p)], [yr, yr - 0.15], color=c, lw=1.1)
@@ -582,12 +596,15 @@ def draw_td_roc(cph, df, feats, endpoint, times, fname):
     print(f"[save] {fname}")
 
 
-def run_endpoint(d, y, times, model="composite"):
+def run_endpoint(d, y, times, model="composite", outtag=""):
     df = prep_xy(d, y)
     if model == "composite":
         feats = [f for f in ["mTstage", "mNstage"] if f in df.columns]
+    elif model == "components":
+        feats = [f for f in COMPONENTS if f in df.columns]
     else:
         feats, _ = select_vars(df, y)
+    sfx = outtag
     cph = fit_final(df, feats)
     print(f"\n===== {y} (n={len(df)}, events={int(df['E'].sum())}) =====")
     print("selected:", feats)
@@ -603,23 +620,23 @@ def run_endpoint(d, y, times, model="composite"):
           f"corrected={ci['C_corr']:.3f} | refit CI [{ci['lo']:.3f}, {ci['hi']:.3f}]")
     c_txt = (f"Harrell C = {ci['C_app']:.3f} (optimism-corrected {ci['C_corr']:.3f}; "
              f"95% CI {ci['lo']:.3f}–{ci['hi']:.3f})")
-    draw_nomogram(cph, df, feats, times, y, f"nomogram_{y}.png", c_txt)
+    draw_nomogram(cph, df, feats, times, y, f"nomogram_{y}{sfx}.png", c_txt)
 
     risk = {}
     cal_rows = []
     lp = cph.predict_log_partial_hazard(df[feats]).values.ravel()
     for t in times:
         risk[t] = 1 - surv_at(cph, df, t, feats)
-        dfc = calibration(cph, df, feats, y, t, f"calibration_{y}_{t//12}yr.png")
+        dfc = calibration(cph, df, feats, y, t, f"calibration_{y}_{t//12}yr{sfx}.png")
         slope, intercept = calibration_slope_ipcw(risk[t], df["T"].values, df["E"].values, t)
         cal_rows.append({"time": t, "calibration_slope": round(slope, 3),
                          "calibration_intercept": round(intercept, 3)})
         print(f"  calibration slope/intercept @{t}mo = {slope:.3f} / {intercept:.3f}")
-        dfc.to_csv(os.path.join(OUT, f"calibration_{y}_{t//12}yr.csv"), index=False)
-    pd.DataFrame(cal_rows).to_csv(os.path.join(OUT, f"calibration_slope_{y}.csv"), index=False)
+        dfc.to_csv(os.path.join(OUT, f"calibration_{y}_{t//12}yr{sfx}.csv"), index=False)
+    pd.DataFrame(cal_rows).to_csv(os.path.join(OUT, f"calibration_slope_{y}{sfx}.csv"), index=False)
 
-    tvals = risk_group_km(cph, df, feats, y, times, f"risk_km_{y}.png")
-    draw_td_roc(cph, df, feats, y, times, f"roc_{y}.png")
+    tvals = risk_group_km(cph, df, feats, y, times, f"risk_km_{y}{sfx}.png")
+    draw_td_roc(cph, df, feats, y, times, f"roc_{y}{sfx}.png")
     print("  time-dependent AUC:", {k: round(v, 3) for k, v in tvals.items()})
 
     th = np.arange(0.05, 0.81, 0.025)
@@ -639,12 +656,12 @@ def run_endpoint(d, y, times, model="composite"):
                                           times[0], pt) for pt in th])
             except Exception as e:
                 print(f"  [dca] {f} skip: {e}")
-    draw_dca(dca, y, times[0], f"dca_{y}_{times[0]//12}yr.png")
+    draw_dca(dca, y, times[0], f"dca_{y}_{times[0]//12}yr{sfx}.png")
 
     # summary
     summ = cph.summary[["coef", "exp(coef)", "p"]].copy()
-    summ.to_csv(os.path.join(OUT, f"model_{y}.csv"), encoding="utf-8-sig")
-    with open(os.path.join(OUT, f"summary_{y}.txt"), "w", encoding="utf-8") as f:
+    summ.to_csv(os.path.join(OUT, f"model_{y}{sfx}.csv"), encoding="utf-8-sig")
+    with open(os.path.join(OUT, f"summary_{y}{sfx}.txt"), "w", encoding="utf-8") as f:
         f.write(f"[{y}] n={len(df)}, events={int(df['E'].sum())}\n")
         f.write(f"selected vars: {feats}\n")
         f.write(c_txt + "\n\n")
@@ -670,13 +687,15 @@ def main():
     ap.add_argument("--endpoints", default="OS,PFS")
     ap.add_argument("--times", default="36,60")
     ap.add_argument("--model", default="composite",
-                    choices=["composite", "auto"],
-                    help="composite=복합 병기(mTstage+mNstage)만 / auto=데이터 기반 선택")
+                    choices=["composite", "components", "auto"],
+                    help="composite=mTstage+mNstage / components=개별 구성요소 / auto=데이터 기반")
+    ap.add_argument("--outtag", default="",
+                    help="출력 파일 접미사 (예: _stage)")
     args = ap.parse_args()
     times = [int(x) for x in args.times.split(",")]
     d = load()
     for y in [x.strip() for x in args.endpoints.split(",") if x.strip()]:
-        run_endpoint(d, y, times, model=args.model)
+        run_endpoint(d, y, times, model=args.model, outtag=args.outtag)
     print("\n[출력]", OUT)
 
 

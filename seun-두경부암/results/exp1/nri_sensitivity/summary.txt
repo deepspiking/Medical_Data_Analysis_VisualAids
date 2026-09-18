@@ -1,0 +1,24 @@
+NRI t=24 + Holm
+             pair     y   NRI     lo    hi      p  NRI_event  NRI_nonevent  sig_raw  p_holm  sig_holm
+mStage vs ajcc8th   PFS 0.848  0.508 1.152 0.0000      0.451        -0.397     True  0.0000      True
+mStage vs ajcc8th   DSS 0.250 -0.191 0.702 0.2807     -0.120        -0.370    False  0.5614     False
+mStage vs ajcc8th    OS 0.135 -0.259 0.533 0.5373     -0.235        -0.370    False  0.5614     False
+mStage vs ajcc8th LRRFS 1.007  0.647 1.334 0.0000      0.538        -0.469     True  0.0000      True
+     mTstage vs T   PFS 0.717  0.382 1.058 0.0000      0.098        -0.619     True  0.0000      True
+     mTstage vs T   DSS 1.061  0.630 1.460 0.0000      0.280        -0.781     True  0.0000      True
+     mTstage vs T    OS 0.883  0.496 1.238 0.0000      0.294        -0.589     True  0.0000      True
+     mTstage vs T LRRFS 0.631  0.266 1.009 0.0000     -0.026        -0.656     True  0.0000      True
+     mNstage vs N   PFS 0.592  0.243 0.925 0.0007     -0.059        -0.651     True  0.0042      True
+     mNstage vs N   DSS 0.442 -0.007 0.887 0.0560     -0.120        -0.562    False  0.1680     False
+     mNstage vs N    OS 0.503  0.094 0.900 0.0153     -0.059        -0.562     True  0.0612     False
+     mNstage vs N LRRFS 0.497  0.126 0.867 0.0093     -0.128        -0.625     True  0.0465      True
+
+mNstage LRRFS by horizon
+ t_months   NRI     lo    hi      p  NRI_event  NRI_nonevent
+       12 0.339 -0.044 0.722 0.0760     -0.143        -0.482
+       24 0.497  0.126 0.867 0.0093     -0.128        -0.625
+       36 0.429  0.037 0.796 0.0307     -0.190        -0.619
+       48 0.358 -0.072 0.765 0.1073     -0.190        -0.548
+
+permutation p=0.0542
+refit NRI mean=0.508 CI [0.106,0.873]

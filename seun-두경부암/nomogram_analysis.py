@@ -196,8 +196,8 @@ def draw_nomogram(cph, df, feats, times, endpoint, fname, cindex_txt):
         lp = np.log(np.log(s) / np.log(s0t))
         return (lp - intercept) / slope
 
-    nrows = 3 + len(feats) + len(times)
-    fig, ax = plt.subplots(figsize=(10, 0.62 * nrows + 1.6))
+    nrows = 4 + len(feats) + len(times)
+    fig, ax = plt.subplots(figsize=(11, 0.62 * nrows + 1.8))
     ypos = {}
     yy = 0.0
     ypos["Points"] = yy
@@ -206,10 +206,17 @@ def draw_nomogram(cph, df, feats, times, endpoint, fname, cindex_txt):
         ypos[f] = yy
         yy += 1.0
     ypos["Total"] = yy + 0.25
-    ypos["LP"] = ypos["Total"] + 1.0
+    ypos["Risk"] = ypos["Total"] + 1.05
+    ypos["LP"] = ypos["Risk"] + 1.05
     for t in times:
         ypos[f"t{t}"] = ypos["LP"] + 1.0 + 0.85 * times.index(t)
     ymax = max(ypos.values()) + 0.6
+    var_palette = ["#1f77b4", "#ff7f0e", "#2ca02c", "#9467bd", "#8c564b",
+                   "#17becf", "#e377c2", "#7f7f7f", "#bcbd22", "#aec7e8"]
+    var_colors = {f: var_palette[i % len(var_palette)] for i, f in enumerate(feats)}
+    for f in ("mTstage", "mNstage"):
+        if f in var_colors:
+            var_colors[f] = "#c0392b"
 
     XMAX = 100.0  # 물리 좌표 0..100
 
@@ -232,7 +239,8 @@ def draw_nomogram(cph, df, feats, times, endpoint, fname, cindex_txt):
     for f in feats:
         yr = ypos[f]
         mp = nc["max_points"][f]
-        ax.plot([top_x(0), top_x(mp)], [yr] * 2, color="black", lw=1.2)
+        c = var_colors[f]
+        ax.plot([top_x(0), top_x(mp)], [yr] * 2, color=c, lw=2.4, solid_capstyle="round")
         vals = sorted(df[f].dropna().unique())
         if len(vals) > 8:
             ticks = nice_ticks(float(min(vals)), float(max(vals)))
@@ -240,10 +248,11 @@ def draw_nomogram(cph, df, feats, times, endpoint, fname, cindex_txt):
             ticks = vals
         for v in ticks:
             p = nc["points_of"](f, v)
-            ax.plot([top_x(p), top_x(p)], [yr, yr - 0.13], color="black", lw=0.9)
+            ax.plot([top_x(p), top_x(p)], [yr, yr - 0.15], color=c, lw=1.1)
             lab = f"{v:g}" if isinstance(v, (int, float, np.floating)) else str(v)
-            ax.text(top_x(p), yr - 0.24, lab, ha="center", va="top", fontsize=8)
-        ax.text(-2.5, yr, LABELS.get(f, f), ha="right", va="center", fontsize=10, fontweight="bold")
+            ax.text(top_x(p), yr - 0.26, lab, ha="center", va="top", fontsize=8.5)
+        ax.text(-2.5, yr, LABELS.get(f, f), ha="right", va="center",
+                fontsize=10.5, fontweight="bold", color=c)
 
     # Total Points
     yT = ypos["Total"]
@@ -253,6 +262,22 @@ def draw_nomogram(cph, df, feats, times, endpoint, fname, cindex_txt):
         ax.plot([bot_x(tp), bot_x(tp)], [yT, yT - 0.16], color="black", lw=1.0)
         ax.text(bot_x(tp), yT - 0.26, f"{tp:g}", ha="center", va="top", fontsize=8)
     ax.text(-2.5, yT, "Total Points", ha="right", va="center", fontsize=10, fontweight="bold")
+
+    from matplotlib.patches import Rectangle
+    yR = ypos["Risk"]
+    tp33, tp67 = np.percentile(tp_meas, [33.3, 66.7])
+    bands = [(0.0, tp33, "#2ca02c", "Low-risk"),
+             (tp33, tp67, "#ff7f0e", "Medium-risk"),
+             (tp67, total_max, "#d62728", "High-risk")]
+    for x0, x1, col, lab in bands:
+        if x1 <= x0:
+            continue
+        xa, xb = bot_x(x0), bot_x(x1)
+        ax.add_patch(Rectangle((xa, yR - 0.34), xb - xa, 0.68,
+                               facecolor=col, edgecolor="white", lw=1.2, zorder=2))
+        ax.text((xa + xb) / 2, yR, lab, ha="center", va="center",
+                fontsize=10, fontweight="bold", color="white", zorder=3)
+    ax.text(-2.5, yR, "Risk group", ha="right", va="center", fontsize=10, fontweight="bold")
 
     # Linear Predictor
     yL = ypos["LP"]
@@ -266,19 +291,22 @@ def draw_nomogram(cph, df, feats, times, endpoint, fname, cindex_txt):
     ax.text(-2.5, yL, "Linear Predictor", ha="right", va="center", fontsize=10, fontweight="bold")
 
     # Survival scales
-    for t in times:
+    s_colors = ["#1f77b4", "#d62728", "#2ca02c", "#9467bd"]
+    for ti, t in enumerate(times):
         yS = ypos[f"t{t}"]
+        col = s_colors[ti % len(s_colors)]
         label = f"{t}-month survival" if t % 12 else f"{t//12}-year survival"
-        ax.text(-2.5, yS, label, ha="right", va="center", fontsize=10, fontweight="bold")
+        ax.text(-2.5, yS, label, ha="right", va="center", fontsize=10.5,
+                fontweight="bold", color=col)
         s_ticks = [0.9, 0.85, 0.8, 0.75, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
         tps = [(s, tp_of_surv(t, s)) for s in s_ticks]
         tps = [(s, tp) for s, tp in tps if tp is not None and np.isfinite(tp) and 0 <= tp <= total_max]
         if not tps:
             continue
-        ax.plot([bot_x(tps[0][1]), bot_x(tps[-1][1])], [yS] * 2, color="black", lw=1.2)
+        ax.plot([bot_x(tps[0][1]), bot_x(tps[-1][1])], [yS] * 2, color=col, lw=2.2)
         for s, tp in tps:
-            ax.plot([bot_x(tp), bot_x(tp)], [yS, yS - 0.14], color="black", lw=0.9)
-            ax.text(bot_x(tp), yS - 0.24, f"{s:g}", ha="center", va="top", fontsize=8)
+            ax.plot([bot_x(tp), bot_x(tp)], [yS, yS - 0.15], color=col, lw=1.0)
+            ax.text(bot_x(tp), yS - 0.26, f"{s:g}", ha="center", va="top", fontsize=8.5)
 
     ax.set_xlim(-16, 104)
     ax.set_ylim(ymax, -0.7)

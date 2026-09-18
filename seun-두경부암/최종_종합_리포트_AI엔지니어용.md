@@ -289,17 +289,17 @@ WPOI5, HPV/P16, CCRT(방사선치료 여부) 등
 ### 5.6 Nomogram + Calibration + DCA (신규, 2026-09-18)
 
 - 의료계 표준 **예후 예측도구 세트**를 파이썬으로 구현 (`nomogram_analysis.py`).
-- 방법: Cox 변수선택 → nomogram(3·5년) → IPCW calibration slope → survival DCA → Harrell C
+- 방법: Cox(**복합 병기 mTstage+mNstage**) → nomogram(3·5년) → IPCW calibration slope → survival DCA → Harrell C
   (apparent + bootstrap optimism-corrected) + time-dependent AUC + risk-group KM.
-- 결과(그림 + 표): OS C **0.811(보정 0.804)**, PFS C **0.722(보정 0.706)**; 두 endpoint 모두
-  **mTstage·mNstage가 최종 예측인자로 선택**, calibration slope 0.91~0.95.
+- 결과(그림 + 표): OS C **0.803(보정 0.799)**, PFS C **0.718(보정 0.712)**; 두 endpoint 모두
+  **복합 병기 축(mTstage·mNstage)만 사용**(size·DOI·PD 구성요소는 중복이라 제외), calibration slope 0.76~0.96.
 - 그림: `results/exp1/nomogram/` · 패널: `results/exp1/nomogram/panels/`
 - 상세: `정세운선생님_nomogram_답변_20260918.md`
 
 | endpoint | 모델 변수 | C-index (corrected) | Calibration slope (3·5년) | Time-AUC (3·5년) | Risk-group log-rank |
 |---|---|---|---|---|---|
-| **OS** | tumor size, mTstage, mNstage | **0.811 (0.804)** [0.744–0.875] | 0.91 / 0.91 | 0.795 / 0.810 | **p<0.001** |
-| **PFS** | DOI, HPV/P16(+), mTstage, mNstage | **0.722 (0.706)** [0.647–0.799] | 0.95 / 0.91 | 0.739 / 0.751 | **p<0.001** |
+| **OS** | **mTstage, mNstage** (복합 병기) | **0.803 (0.799)** [0.736–0.864] | 0.92 / 0.84 | 0.780 / 0.780 | **p<0.001** |
+| **PFS** | **mTstage, mNstage** (복합 병기) | **0.718 (0.712)** [0.652–0.787] | 0.96 / 0.76 | 0.726 / 0.721 | **p<0.001** |
 
 ![OS Nomogram](results/exp1/nomogram/nomogram_OS.png)
 

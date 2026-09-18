@@ -1,9 +1,8 @@
 [OS] n=133, events=44
-selected vars: ['tumor size (cm)', 'mTstage', 'mNstage']
-Harrell C = 0.811 (optimism-corrected 0.804; 95% CI 0.744–0.875)
+selected vars: ['mTstage', 'mNstage']
+Harrell C = 0.803 (optimism-corrected 0.799; 95% CI 0.736–0.864)
 
-                   coef  exp(coef)       p
-covariate                                 
-tumor size (cm)  0.2180     1.2436  0.0030
-mTstage          0.6163     1.8520  0.0003
-mNstage          0.2843     1.3288  0.0065
+             coef  exp(coef)       p
+covariate                           
+mTstage    0.6959     2.0055  0.0000
+mNstage    0.2893     1.3355  0.0051

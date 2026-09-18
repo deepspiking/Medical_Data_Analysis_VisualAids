@@ -1,10 +1,8 @@
 [PFS] n=133, events=61
-selected vars: ['DOI (mm)', 'HPV/P16_2', 'mTstage', 'mNstage']
-Harrell C = 0.722 (optimism-corrected 0.706; 95% CI 0.647–0.799)
+selected vars: ['mTstage', 'mNstage']
+Harrell C = 0.718 (optimism-corrected 0.712; 95% CI 0.652–0.787)
 
              coef  exp(coef)       p
 covariate                           
-DOI (mm)   0.0277     1.0280  0.0341
-HPV/P16_2 -0.4474     0.6393  0.0922
-mTstage    0.4092     1.5056  0.0072
-mNstage    0.2511     1.2854  0.0080
+mTstage    0.4906     1.6333  0.0004
+mNstage    0.2478     1.2812  0.0080

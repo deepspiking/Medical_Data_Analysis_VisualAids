@@ -79,3 +79,18 @@ DOI는 HR이 1.03/mm로 작지만 **범위가 1~50mm로 넓어** 축이 길어�
 
 - **DSS가 가장 강함**(C 0.86), LRRFS가 가장 약함(C 0.69) — endpoint 난이도 차이.
 - mTstage HR: DSS 2.15 / OS 2.01 / PFS 1.63 / LRRFS 1.44 (모두 p<0.05).
+
+---
+
+## 6. "그럼 stage를 빼고 구성요소만 넣으면?" — 개별 인자 중요도
+
+병기 nomogram에서는 중복 때문에 구성요소를 빼지만, **stage를 전부 빼고 구성요소만 넣은 모델**로
+"어떤 인자가 가장 중요한가"를 별도로 확인할 수 있습니다(`정세운선생님_구성요소_중요도_20260918.md`).
+
+**결과(구성요소만, 표준화 |β|×SD): PD cellularity가 4개 endpoint 중 3개에서 1위, LRRFS에서 2위.**
+임상인자까지 넣어도 **PD가 4/4에서 1위**. 그 뒤로 LN deposit · DOI · tumor size.
+
+![구성요소 중요도](results/exp1/component_importance/component_importance.png)
+
+→ **PD cellularity가 가장 강력한 구성요소** = 수정 T staging(PD-high → mT4)의 근거를 정면 지지.
+→ 단, 구성요소 간 상관(size↔DOI, count↔deposit)으로 개별 p값은 불안정 → **순위는 모델 내 상대 기여도로 해석**.

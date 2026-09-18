@@ -24,7 +24,7 @@ plt.rcParams["axes.unicode_minus"] = False
 COMP = {
     "Tumor size (cm)": "tumor size (cm)",
     "DOI (mm)": "DOI (mm)",
-    "PD cellularity": "PD_01vs2",
+    "PD_01vs2": "PD_01vs2",
     "Bone invasion": "bone invasion_val",
     "Depth of bone inv. (mm)": "depth of bone invasion (mm)_val",
     "LN count": "LN meta count_val",
@@ -92,7 +92,7 @@ def main():
     for ax, y in zip(axes.ravel(), Y):
         a = pd.read_csv(os.path.join(OUT, f"importance_components_{y}.csv"))
         a = a.sort_values("std_beta")
-        colors = ["#c0392b" if v in ("PD cellularity", "DOI (mm)", "Tumor size (cm)")
+        colors = ["#c0392b" if v in ("PD_01vs2", "DOI (mm)", "Tumor size (cm)")
                   else "#7f8c8d" for v in a["variable"]]
         ax.barh(a["variable"], a["std_beta"], color=colors)
         for i, (v, s) in enumerate(zip(a["variable"], a["std_beta"])):

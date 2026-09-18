@@ -59,7 +59,7 @@ LABELS = {
     "PNI": "PNI", "LVI": "LVI", "RM": "Resection margin", "TIL": "TIL", "TSR": "TSR",
     "WPOI5_2tier": "WPOI5", "HPV/P16_2": "HPV/P16 (+)", "CCRT_bin": "CCRT",
     "mTstage": "Modified T stage", "mNstage": "Modified N stage",
-    "PD_01vs2": "PD cellularity", "bone invasion_val": "Bone invasion",
+    "PD_01vs2": "PD_01vs2", "bone invasion_val": "Bone invasion",
     "LN meta count_val": "LN count", "LN tumor size (mm)_val": "LN deposit (mm)",
     "ENE_val": "ENE", "contra_bilateral_val": "Bilateral/contralat.",
 }

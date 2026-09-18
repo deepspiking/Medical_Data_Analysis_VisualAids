@@ -70,4 +70,4 @@ LRRFS mNstage (t=24): **NRI = NRI_event − NRI_nonevent = (−0.128) − (−0.
 
 **권고**: 논문에서는 **"mNstage는 AJCC N과 구동등(ΔC≈0)"**으로 본문 기술하고,
 LRRFS NRI는 **exploratory/secondary**로만 언급(다중비교·경계성·non-event driven 명시).
-수정병기의 **주된 기여는 mTstage(PD cellularity)**로 정리하는 것이 리뷰어 방어에 안전합니다.
+수정병기의 **주된 기여는 mTstage(PD_01vs2)**로 정리하는 것이 리뷰어 방어에 안전합니다.

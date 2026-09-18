@@ -298,8 +298,10 @@ WPOI5, HPV/P16, CCRT(방사선치료 여부) 등
 
 | endpoint | 모델 변수 | C-index (corrected) | Calibration slope (3·5년) | Time-AUC (3·5년) | Risk-group log-rank |
 |---|---|---|---|---|---|
+| **DSS** | **mTstage, mNstage** (복합 병기) | **0.859 (0.854)** [0.798–0.914] | 1.19 / 1.07 | 0.848 / 0.848 | **p<0.001** |
 | **OS** | **mTstage, mNstage** (복합 병기) | **0.803 (0.799)** [0.736–0.864] | 0.92 / 0.84 | 0.780 / 0.780 | **p<0.001** |
 | **PFS** | **mTstage, mNstage** (복합 병기) | **0.718 (0.712)** [0.652–0.787] | 0.96 / 0.76 | 0.726 / 0.721 | **p<0.001** |
+| **LRRFS** | **mTstage, mNstage** (복합 병기) | **0.697 (0.689)** [0.601–0.771] | 1.34 / 1.03 | 0.727 / 0.729 | **p<0.001** |
 
 ![OS Nomogram](results/exp1/nomogram/nomogram_OS.png)
 
@@ -312,6 +314,18 @@ WPOI5, HPV/P16, CCRT(방사선치료 여부) 등
 ![PFS Calibration (A: 3년, B: 5년)](results/exp1/nomogram/panels/panel_PFS_calibration.png)
 
 ![PFS 평가 패널 (A: DCA, B: ROC, C: risk-group KM)](results/exp1/nomogram/panels/panel_PFS_decision.png)
+
+![DSS Nomogram](results/exp1/nomogram/nomogram_DSS.png)
+
+![DSS Calibration (A: 3년, B: 5년)](results/exp1/nomogram/panels/panel_DSS_calibration.png)
+
+![DSS 평가 패널 (A: DCA, B: ROC, C: risk-group KM)](results/exp1/nomogram/panels/panel_DSS_decision.png)
+
+![LRRFS Nomogram](results/exp1/nomogram/nomogram_LRRFS.png)
+
+![LRRFS Calibration (A: 3년, B: 5년)](results/exp1/nomogram/panels/panel_LRRFS_calibration.png)
+
+![LRRFS 평가 패널 (A: DCA, B: ROC, C: risk-group KM)](results/exp1/nomogram/panels/panel_LRRFS_decision.png)
 
 ---
 

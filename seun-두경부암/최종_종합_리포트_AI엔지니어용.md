@@ -289,19 +289,21 @@ WPOI5, HPV/P16, CCRT(방사선치료 여부) 등
 ### 5.6 Nomogram + Calibration + DCA (신규, 2026-09-18)
 
 - 의료계 표준 **예후 예측도구 세트**를 파이썬으로 구현 (`nomogram_analysis.py`).
-- 방법: Cox(**개별 구성요소 8개, stage 제외**) → nomogram(3·5년) → IPCW calibration slope → survival DCA → Harrell C
+- 방법: Cox(**주요변수 5개**, stage 제외) → nomogram(3·5년) → IPCW calibration slope → survival DCA → Harrell C
   (apparent + bootstrap optimism-corrected) + time-dependent AUC + risk-group KM.
 - 결과(그림 + 표): DSS **0.878** / OS **0.809** / PFS **0.725** / LRRFS **0.714** (apparent);
-  **stage 제외·개별 구성요소**를 사용(선생님 결정), PD cellularity가 최중요. calibration slope 0.86~1.43.
+  **주요변수 5개**(PD·deposit·DOI·size·bilateral)를 primary, **복합 병기 mTstage·mNstage는 본문 동반**. PD가 최중요.
 - 그림: `results/exp1/nomogram/` · 패널: `results/exp1/nomogram/panels/`
 - 상세: `정세운선생님_nomogram_답변_20260918.md`
 
 | endpoint | 모델 변수 | C-index (corrected) | Calibration slope (3·5년) | Time-AUC (3·5년) | Risk-group log-rank |
 |---|---|---|---|---|---|
-| **DSS** | **구성요소 8개** (stage 제외) | **0.878 (0.860)** [0.815–0.937] | 1.20 / 1.28 | 0.868 / 0.871 | **p<0.001** |
-| **OS** | **구성요소 8개** (stage 제외) | **0.809 (0.792)** [0.727–0.875] | 0.89 / 0.94 | 0.787 / 0.782 | **p<0.001** |
-| **PFS** | **구성요소 8개** (stage 제외) | **0.725 (0.707)** [0.649–0.791] | 0.98 / 0.86 | 0.736 / 0.726 | **p<0.001** |
-| **LRRFS** | **구성요소 8개** (stage 제외) | **0.714 (0.682)** [0.630–0.794] | 1.43 / 1.15 | 0.759 / 0.727 | **p<0.001** |
+| **DSS** | **주요변수 5개** (stage 제외) | **0.869 (0.856)** [0.806–0.929] | 1.31 / 1.38 | 0.869 / 0.870 | **p<0.001** |
+| **OS** | **주요변수 5개** (stage 제외) | **0.805 (0.795)** [0.726–0.877] | 0.96 / 1.02 | 0.793 / 0.788 | **p<0.001** |
+| **PFS** | **주요변수 5개** (stage 제외) | **0.726 (0.714)** [0.653–0.792] | 1.08 / 0.92 | 0.737 / 0.727 | **p<0.001** |
+| **LRRFS** | **주요변수 5개** (stage 제외) | **0.718 (0.694)** [0.627–0.790] | 1.61 / 1.24 | 0.767 / 0.737 | **p<0.001** |
+
+**복합 병기 companion(본문 동반)**: DSS **0.859** / OS **0.803** / PFS **0.718** / LRRFS **0.697** (C-index apparent).
 
 ![OS Nomogram](results/exp1/nomogram/nomogram_OS.png)
 
@@ -326,6 +328,14 @@ WPOI5, HPV/P16, CCRT(방사선치료 여부) 등
 ![LRRFS Calibration (A: 3년, B: 5년)](results/exp1/nomogram/panels/panel_LRRFS_calibration.png)
 
 ![LRRFS 평가 패널 (A: DCA, B: ROC, C: risk-group KM)](results/exp1/nomogram/panels/panel_LRRFS_decision.png)
+
+![그림 N13. DSS 복합 병기 Nomogram (companion)](results/exp1/nomogram/nomogram_DSS_stage.png)
+
+![그림 N14. OS 복합 병기 Nomogram (companion)](results/exp1/nomogram/nomogram_OS_stage.png)
+
+![그림 N15. PFS 복합 병기 Nomogram (companion)](results/exp1/nomogram/nomogram_PFS_stage.png)
+
+![그림 N16. LRRFS 복합 병기 Nomogram (companion)](results/exp1/nomogram/nomogram_LRRFS_stage.png)
 
 ---
 

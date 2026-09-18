@@ -289,19 +289,19 @@ WPOI5, HPV/P16, CCRT(방사선치료 여부) 등
 ### 5.6 Nomogram + Calibration + DCA (신규, 2026-09-18)
 
 - 의료계 표준 **예후 예측도구 세트**를 파이썬으로 구현 (`nomogram_analysis.py`).
-- 방법: Cox(**복합 병기 mTstage+mNstage**) → nomogram(3·5년) → IPCW calibration slope → survival DCA → Harrell C
+- 방법: Cox(**개별 구성요소 8개, stage 제외**) → nomogram(3·5년) → IPCW calibration slope → survival DCA → Harrell C
   (apparent + bootstrap optimism-corrected) + time-dependent AUC + risk-group KM.
-- 결과(그림 + 표): OS C **0.803(보정 0.799)**, PFS C **0.718(보정 0.712)**; 두 endpoint 모두
-  **복합 병기 축(mTstage·mNstage)만 사용**(size·DOI·PD 구성요소는 중복이라 제외), calibration slope 0.76~0.96.
+- 결과(그림 + 표): DSS **0.878** / OS **0.809** / PFS **0.725** / LRRFS **0.714** (apparent);
+  **stage 제외·개별 구성요소**를 사용(선생님 결정), PD cellularity가 최중요. calibration slope 0.86~1.43.
 - 그림: `results/exp1/nomogram/` · 패널: `results/exp1/nomogram/panels/`
 - 상세: `정세운선생님_nomogram_답변_20260918.md`
 
 | endpoint | 모델 변수 | C-index (corrected) | Calibration slope (3·5년) | Time-AUC (3·5년) | Risk-group log-rank |
 |---|---|---|---|---|---|
-| **DSS** | **mTstage, mNstage** (복합 병기) | **0.859 (0.854)** [0.798–0.914] | 1.19 / 1.07 | 0.848 / 0.848 | **p<0.001** |
-| **OS** | **mTstage, mNstage** (복합 병기) | **0.803 (0.799)** [0.736–0.864] | 0.92 / 0.84 | 0.780 / 0.780 | **p<0.001** |
-| **PFS** | **mTstage, mNstage** (복합 병기) | **0.718 (0.712)** [0.652–0.787] | 0.96 / 0.76 | 0.726 / 0.721 | **p<0.001** |
-| **LRRFS** | **mTstage, mNstage** (복합 병기) | **0.697 (0.689)** [0.601–0.771] | 1.34 / 1.03 | 0.727 / 0.729 | **p<0.001** |
+| **DSS** | **구성요소 8개** (stage 제외) | **0.878 (0.860)** [0.815–0.937] | 1.20 / 1.28 | 0.868 / 0.871 | **p<0.001** |
+| **OS** | **구성요소 8개** (stage 제외) | **0.809 (0.792)** [0.727–0.875] | 0.89 / 0.94 | 0.787 / 0.782 | **p<0.001** |
+| **PFS** | **구성요소 8개** (stage 제외) | **0.725 (0.707)** [0.649–0.791] | 0.98 / 0.86 | 0.736 / 0.726 | **p<0.001** |
+| **LRRFS** | **구성요소 8개** (stage 제외) | **0.714 (0.682)** [0.630–0.794] | 1.43 / 1.15 | 0.759 / 0.727 | **p<0.001** |
 
 ![OS Nomogram](results/exp1/nomogram/nomogram_OS.png)
 

@@ -286,6 +286,35 @@ WPOI5, HPV/P16, CCRT(방사선치료 여부) 등
 
 ---
 
+### 5.6 Nomogram + Calibration + DCA (신규, 2026-09-18)
+
+- 의료계 표준 **예후 예측도구 세트**를 파이썬으로 구현 (`nomogram_analysis.py`).
+- 방법: Cox 변수선택 → nomogram(3·5년) → IPCW calibration slope → survival DCA → Harrell C
+  (apparent + bootstrap optimism-corrected) + time-dependent AUC + risk-group KM.
+- 결과(그림 + 표): OS C **0.811(보정 0.804)**, PFS C **0.722(보정 0.706)**; 두 endpoint 모두
+  **mTstage·mNstage가 최종 예측인자로 선택**, calibration slope 0.91~0.95.
+- 그림: `results/exp1/nomogram/` · 패널: `results/exp1/nomogram/panels/`
+- 상세: `정세운선생님_nomogram_답변_20260918.md`
+
+| endpoint | 모델 변수 | C-index (corrected) | Calibration slope (3·5년) | Time-AUC (3·5년) | Risk-group log-rank |
+|---|---|---|---|---|---|
+| **OS** | tumor size, mTstage, mNstage | **0.811 (0.804)** [0.744–0.875] | 0.91 / 0.91 | 0.795 / 0.810 | **p<0.001** |
+| **PFS** | DOI, HPV/P16(+), mTstage, mNstage | **0.722 (0.706)** [0.647–0.799] | 0.95 / 0.91 | 0.739 / 0.751 | **p<0.001** |
+
+![OS Nomogram](results/exp1/nomogram/nomogram_OS.png)
+
+![OS Calibration (A: 3년, B: 5년)](results/exp1/nomogram/panels/panel_OS_calibration.png)
+
+![OS 평가 패널 (A: DCA, B: ROC, C: risk-group KM)](results/exp1/nomogram/panels/panel_OS_decision.png)
+
+![PFS Nomogram](results/exp1/nomogram/nomogram_PFS.png)
+
+![PFS Calibration (A: 3년, B: 5년)](results/exp1/nomogram/panels/panel_PFS_calibration.png)
+
+![PFS 평가 패널 (A: DCA, B: ROC, C: risk-group KM)](results/exp1/nomogram/panels/panel_PFS_decision.png)
+
+---
+
 ## 6. 기술적 인사이트 (AI 엔지니어 관점)
 
 ### 6.1 "과적합을 피하는 방법"이 연구의 핵심
@@ -374,7 +403,11 @@ python3 experiment_4e_survival_regression.py
 # 6. 실험 5 (score↔생존)
 python3 experiment_5_score_survival.py
 
-# 7. 시각화 + 검증
+# 7. Nomogram + Calibration + DCA (신규)
+python3 nomogram_analysis.py --endpoints OS,PFS --times 36,60
+python3 make_nomogram_panels.py
+
+# 8. 시각화 + 검증
 python3 visualize_results.py
 python3 validation_tools.py
 ```

@@ -582,9 +582,12 @@ def draw_td_roc(cph, df, feats, endpoint, times, fname):
     print(f"[save] {fname}")
 
 
-def run_endpoint(d, y, times):
+def run_endpoint(d, y, times, model="composite"):
     df = prep_xy(d, y)
-    feats, uni = select_vars(df, y)
+    if model == "composite":
+        feats = [f for f in ["mTstage", "mNstage"] if f in df.columns]
+    else:
+        feats, _ = select_vars(df, y)
     cph = fit_final(df, feats)
     print(f"\n===== {y} (n={len(df)}, events={int(df['E'].sum())}) =====")
     print("selected:", feats)
@@ -666,11 +669,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--endpoints", default="OS,PFS")
     ap.add_argument("--times", default="36,60")
+    ap.add_argument("--model", default="composite",
+                    choices=["composite", "auto"],
+                    help="composite=복합 병기(mTstage+mNstage)만 / auto=데이터 기반 선택")
     args = ap.parse_args()
     times = [int(x) for x in args.times.split(",")]
     d = load()
     for y in [x.strip() for x in args.endpoints.split(",") if x.strip()]:
-        run_endpoint(d, y, times)
+        run_endpoint(d, y, times, model=args.model)
     print("\n[출력]", OUT)
 
 

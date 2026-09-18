@@ -32,7 +32,7 @@ def hstack(paths, labels, out, bg="white"):
     print("[save]", os.path.basename(out), canvas.size)
 
 
-for sfx in ["", "_stage"]:
+for sfx in ["", "_stage", "_components"]:
     for y in ["OS", "PFS", "DSS", "LRRFS"]:
         hstack([os.path.join(SRC, f"calibration_{y}_3yr{sfx}.png"),
                 os.path.join(SRC, f"calibration_{y}_5yr{sfx}.png")],

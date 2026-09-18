@@ -51,6 +51,8 @@ FORCE_IN = ["mTstage", "mNstage"]
 COMPONENTS = ["tumor size (cm)", "DOI (mm)", "PD_01vs2", "bone invasion_val",
               "LN meta count_val", "LN tumor size (mm)_val", "ENE_val",
               "contra_bilateral_val"]
+MAJOR = ["PD_01vs2", "LN tumor size (mm)_val", "DOI (mm)", "tumor size (cm)",
+         "contra_bilateral_val"]
 LABELS = {
     "age": "Age (years)", "male": "Sex (male)", "tumor size (cm)": "Tumor size (cm)",
     "DOI (mm)": "DOI (mm)", "differentiation": "Differentiation", "budding_01vs23": "Budding",
@@ -602,6 +604,8 @@ def run_endpoint(d, y, times, model="composite", outtag=""):
         feats = [f for f in ["mTstage", "mNstage"] if f in df.columns]
     elif model == "components":
         feats = [f for f in COMPONENTS if f in df.columns]
+    elif model == "major":
+        feats = [f for f in MAJOR if f in df.columns]
     else:
         feats, _ = select_vars(df, y)
     sfx = outtag
@@ -687,7 +691,7 @@ def main():
     ap.add_argument("--endpoints", default="OS,PFS")
     ap.add_argument("--times", default="36,60")
     ap.add_argument("--model", default="composite",
-                    choices=["composite", "components", "auto"],
+                    choices=["composite", "components", "major", "auto"],
                     help="composite=mTstage+mNstage / components=개별 구성요소 / auto=데이터 기반")
     ap.add_argument("--outtag", default="",
                     help="출력 파일 접미사 (예: _stage)")

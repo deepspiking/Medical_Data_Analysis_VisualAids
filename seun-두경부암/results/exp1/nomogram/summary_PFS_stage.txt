@@ -1,0 +1,8 @@
+[PFS] n=133, events=61
+selected vars: ['mTstage', 'mNstage']
+Harrell C = 0.718 (optimism-corrected 0.712; 95% CI 0.652–0.787)
+
+             coef  exp(coef)       p
+covariate                           
+mTstage    0.4906     1.6333  0.0004
+mNstage    0.2478     1.2812  0.0080

@@ -1,0 +1,8 @@
+[DSS] n=133, events=28
+selected vars: ['mTstage', 'mNstage']
+Harrell C = 0.859 (optimism-corrected 0.854; 95% CI 0.798–0.914)
+
+             coef  exp(coef)       p
+covariate                           
+mTstage    0.7657     2.1505  0.0000
+mNstage    0.3545     1.4254  0.0037

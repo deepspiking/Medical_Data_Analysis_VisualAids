@@ -1,8 +1,14 @@
 [LRRFS] n=133, events=44
-selected vars: ['mTstage', 'mNstage']
-Harrell C = 0.697 (optimism-corrected 0.689; 95% CI 0.601–0.771)
+selected vars: ['tumor size (cm)', 'DOI (mm)', 'PD_01vs2', 'bone invasion_val', 'LN meta count_val', 'LN tumor size (mm)_val', 'ENE_val', 'contra_bilateral_val']
+Harrell C = 0.714 (optimism-corrected 0.682; 95% CI 0.630–0.794)
 
-             coef  exp(coef)       p
-covariate                           
-mTstage    0.3644     1.4397  0.0175
-mNstage    0.2415     1.2731  0.0232
+                          coef  exp(coef)       p
+covariate                                        
+tumor size (cm)        -0.0505     0.9508  0.5982
+DOI (mm)                0.0279     1.0283  0.1269
+PD_01vs2                0.8269     2.2861  0.0073
+bone invasion_val       0.2656     1.3043  0.3741
+LN meta count_val      -0.0353     0.9653  0.2901
+LN tumor size (mm)_val  0.0403     1.0411  0.0358
+ENE_val                 0.0273     1.0277  0.9458
+contra_bilateral_val    0.4466     1.5629  0.4717

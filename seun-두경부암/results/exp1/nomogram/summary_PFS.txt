@@ -1,8 +1,14 @@
 [PFS] n=133, events=61
-selected vars: ['mTstage', 'mNstage']
-Harrell C = 0.718 (optimism-corrected 0.712; 95% CI 0.652–0.787)
+selected vars: ['tumor size (cm)', 'DOI (mm)', 'PD_01vs2', 'bone invasion_val', 'LN meta count_val', 'LN tumor size (mm)_val', 'ENE_val', 'contra_bilateral_val']
+Harrell C = 0.725 (optimism-corrected 0.707; 95% CI 0.649–0.791)
 
-             coef  exp(coef)       p
-covariate                           
-mTstage    0.4906     1.6333  0.0004
-mNstage    0.2478     1.2812  0.0080
+                          coef  exp(coef)       p
+covariate                                        
+tumor size (cm)         0.0664     1.0687  0.4465
+DOI (mm)                0.0316     1.0321  0.0476
+PD_01vs2                0.9916     2.6957  0.0003
+bone invasion_val       0.2124     1.2367  0.4185
+LN meta count_val      -0.0273     0.9731  0.2726
+LN tumor size (mm)_val  0.0390     1.0398  0.0274
+ENE_val                -0.0512     0.9501  0.8904
+contra_bilateral_val    0.7691     2.1578  0.1314
